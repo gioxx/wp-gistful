@@ -152,7 +152,7 @@ final class Embed {
 	 * @return string[]
 	 */
 	public static function file_names( string $id ): array {
-		$key    = Cache::PREFIX . 'f_' . md5( $id );
+		$key    = Cache::names_key( $id );
 		$cached = Cache::get( $key );
 		if ( is_array( $cached ) ) {
 			return $cached;

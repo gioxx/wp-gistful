@@ -237,7 +237,7 @@ class Test_Embed extends Gistful_Test_Case {
 		$url = 'https://gist.github.com/gioxx/abc123#file-swaksWrapper-sh';
 		Embed::oembed_handler( array(), array(), $url, array() );
 		$this->assertStringContainsString( '?file=swaksWrapper.sh', end( $this->requests )['url'] );
-		$this->assertSame( array( 'swaksWrapper.sh' ), get_transient( 'gistful_f_' . md5( 'abc123' ) ) );
+		$this->assertSame( array( 'swaksWrapper.sh' ), get_transient( \Gistful\Cache::names_key( 'abc123' ) ) );
 		$this->reset_calls();
 		Embed::oembed_handler( array(), array(), $url, array() );
 		$this->assertSame( 0, $this->http_calls(), 'names and html both cached' );
@@ -246,7 +246,7 @@ class Test_Embed extends Gistful_Test_Case {
 	public function test_oembed_empty_file_names_cached_short() {
 		$this->mock_all( 500 );
 		Embed::oembed_handler( array(), array(), 'https://gist.github.com/gioxx/abc123#file-foo-sh', array() );
-		$this->assertEqualsWithDelta( time() + 15 * MINUTE_IN_SECONDS, (int) get_option( '_transient_timeout_gistful_f_' . md5( 'abc123' ) ), 5 );
+		$this->assertEqualsWithDelta( time() + 15 * MINUTE_IN_SECONDS, (int) get_option( '_transient_timeout_' . \Gistful\Cache::names_key( 'abc123' ) ), 5 );
 	}
 
 	public function test_oembed_marks_attr_and_ignores_unresolvable_anchor() {

@@ -37,6 +37,7 @@ final class Plugin {
 		add_action( 'init', array( self::class, 'register_embeds' ), 20 );
 		add_action( 'save_post', array( Prefetch::class, 'on_save' ), 10, 2 );
 		Legacy_Hooks::register();
+		Admin\Settings_Page::register();
 	}
 
 	/**

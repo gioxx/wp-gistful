@@ -15,7 +15,9 @@ use Gistful\Gist_Payload;
 class Test_Cache_Backup extends Gistful_Test_Case {
 
 	public function test_key_formats() {
-		$this->assertSame( 'gistful_r_' . md5( 'abc|f.php' ), Cache::raw_key( 'abc', 'f.php' ) );
+		$gen = Cache::generation();
+		$this->assertSame( 'gistful_r_' . md5( $gen . '|abc|f.php' ), Cache::raw_key( 'abc', 'f.php' ) );
+		$this->assertSame( Cache::raw_key( 'abc', 'f.php' ), Cache::raw_key( 'abc', 'f.php' ), 'deterministic within a generation' );
 		$this->assertSame( '_gistful_backup_' . md5( 'abc|' ), Backup::meta_key( 'abc', '' ) );
 		$a = array(
 			'id'     => 'abc',
@@ -31,6 +33,21 @@ class Test_Cache_Backup extends Gistful_Test_Case {
 		$this->assertStringStartsWith( 'gistful_h_', Cache::html_key( $a ) );
 		$a['lines'] = '2';
 		$this->assertNotSame( Cache::html_key( $a ), Cache::html_key( $b ) );
+	}
+
+	public function test_flush_all_bumps_generation_so_old_keys_are_unreachable() {
+		$attr = array( 'id' => 'abc' );
+		$old  = Cache::html_key( $attr );
+		$gen  = Cache::generation();
+		set_transient( $old, 'stale', 600 );
+		Cache::flush_all();
+		$this->assertSame( $gen + 1, Cache::generation() );
+		$new = Cache::html_key( $attr );
+		$this->assertNotSame( $old, $new );
+		// Simulate a persistent object cache that kept the old entry alive.
+		set_transient( $old, 'stale', 600 );
+		$this->assertFalse( Cache::get( $new ) );
+		$this->assertSame( 'gistful_f_' . md5( ( $gen + 1 ) . '|abc' ), Cache::names_key( 'abc' ) );
 	}
 
 	public function test_default_ttl_and_filter() {
