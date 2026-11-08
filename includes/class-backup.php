@@ -50,7 +50,7 @@ final class Backup {
 		}
 		$legacy = get_post_meta( $post_id, '_gist_raw_' . md5( $json_url ), true );
 		if ( is_string( $legacy ) && '' !== $legacy ) {
-			return new Gist_Payload( stripslashes( $legacy ), array(), 'backup' );
+			return new Gist_Payload( $legacy, array(), 'backup' );
 		}
 
 		return null;

@@ -130,7 +130,7 @@ final class Migrator {
 				$maps[ $post_id ] = $post ? self::key_map( $post->post_content ) : array();
 			}
 			$pair = $maps[ $post_id ][ $row->meta_key ] ?? null;
-			if ( $pair && self::import_row( $post_id, $pair[0], $pair[1], (string) $row->meta_value ) ) {
+			if ( $pair && 'imported' === self::import_row( $post_id, $pair[0], $pair[1], (string) $row->meta_value ) ) {
 				++$imported;
 			} else {
 				++$skipped;
@@ -176,33 +176,36 @@ final class Migrator {
 	 * @param string $id      Gist ID.
 	 * @param string $file    File name or ''.
 	 * @param string $value   Legacy meta value (raw gist div).
-	 * @return bool Whether something usable was stored (or already there).
+	 * @return string 'imported', 'exists' (a Gistful backup is already there) or 'empty'.
 	 */
-	private static function import_row( int $post_id, string $id, string $file, string $value ): bool {
+	private static function import_row( int $post_id, string $id, string $file, string $value ): string {
 		if ( Backup::unpack( get_post_meta( $post_id, Backup::meta_key( $id, $file ), true ), 'backup' ) ) {
-			return true;
+			return 'exists';
 		}
+		// GistPress stored the div through update_post_meta(), which unslashes: the value is the original.
 		// Defence in depth: the renderer sanitizes again, which is idempotent.
-		$html = Sanitizer::clean( stripslashes( $value ) );
+		$html = Sanitizer::clean( $value );
 		if ( '' === trim( $html ) ) {
-			return false;
+			return 'empty';
 		}
 		Backup::maybe_store( $post_id, $id, $file, new Gist_Payload( $html, array(), 'backup' ) );
 
-		return true;
+		return 'imported';
 	}
 
 	/**
-	 * Delete GistPress leftovers (one batch). Refuses while GistPress is active.
+	 * Delete GistPress leftovers (one batch). Refuses while GistPress is active,
+	 * and while the backup import is unfinished unless forced.
 	 *
 	 * Rows are deleted as they are processed, so `$offset` is informational;
 	 * `next` is `$offset + processed` while anything is left, else null.
 	 *
-	 * @param int $offset Progress counter.
-	 * @param int $limit  Batch size per kind (meta rows, transients).
+	 * @param int  $offset Progress counter.
+	 * @param int  $limit  Batch size per kind (meta rows, transients).
+	 * @param bool $force  Skip the "import finished" check.
 	 * @return array{processed: int, next: ?int}|\WP_Error
 	 */
-	public static function cleanup( int $offset, int $limit = 50 ) {
+	public static function cleanup( int $offset, int $limit = 50, bool $force = false ) {
 		global $wpdb;
 
 		if ( ! function_exists( 'is_plugin_active' ) ) {
@@ -211,13 +214,15 @@ final class Migrator {
 		if ( is_plugin_active( Conflicts::gistpress_file() ) ) {
 			return new \WP_Error( 'gistful_gistpress_active', __( 'Deactivate GistPress before cleaning up its data.', 'gistful' ), array( 'status' => 409 ) );
 		}
+		if ( ! $force && ! self::import_complete() ) {
+			return new \WP_Error( 'gistful_import_pending', __( 'Import the backups first, or confirm that you want to delete them without importing.', 'gistful' ), array( 'status' => 409 ) );
+		}
 
 		$limit     = max( 1, $limit );
 		$processed = 0;
 
 		foreach ( self::LEGACY_OPTIONS as $name ) {
-			if ( false !== get_option( $name, false ) ) {
-				delete_option( $name );
+			if ( false !== get_option( $name, false ) && delete_option( $name ) ) {
 				++$processed;
 			}
 		}
@@ -225,24 +230,44 @@ final class Migrator {
 		$like = $wpdb->esc_like( self::LEGACY_META ) . '%';
 		$ids  = $wpdb->get_col( $wpdb->prepare( "SELECT meta_id FROM {$wpdb->postmeta} WHERE meta_key LIKE %s ORDER BY meta_id ASC LIMIT %d", $like, $limit ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		foreach ( $ids as $meta_id ) {
-			delete_metadata_by_mid( 'post', (int) $meta_id );
-			++$processed;
+			if ( delete_metadata_by_mid( 'post', (int) $meta_id ) ) {
+				++$processed;
+			}
 		}
 
 		foreach ( self::legacy_transient_names( $limit ) as $name ) {
-			delete_transient( $name );
 			// An orphaned timeout row survives delete_transient() when the value row is gone.
-			delete_option( '_transient_timeout_' . $name );
-			delete_option( '_transient_' . $name );
-			++$processed;
+			$gone = delete_transient( $name );
+			$gone = delete_option( '_transient_timeout_' . $name ) || $gone;
+			$gone = delete_option( '_transient_' . $name ) || $gone;
+			if ( $gone ) {
+				++$processed;
+			}
 		}
 
 		$left = self::count_legacy_meta() + count( self::legacy_transient_names( 1 ) );
+		if ( $left > 0 && 0 === $processed ) {
+			return new \WP_Error( 'gistful_cleanup_stalled', __( 'Cleanup could not delete the remaining GistPress data.', 'gistful' ), array( 'status' => 500 ) );
+		}
 
 		return array(
 			'processed' => $processed,
 			'next'      => $left > 0 ? max( 0, $offset ) + $processed : null,
 		);
+	}
+
+	/**
+	 * Whether the import finished, or there is nothing to import.
+	 *
+	 * @return bool
+	 */
+	private static function import_complete(): bool {
+		if ( 0 === self::count_legacy_meta() ) {
+			return true;
+		}
+		$state = Migration_Controller::state();
+
+		return isset( $state['import'] ) && array_key_exists( 'next', $state['import'] ) && null === $state['import']['next'];
 	}
 
 	/**
@@ -272,30 +297,58 @@ final class Migrator {
 	}
 
 	/**
+	 * Result cap, and scan chunk size, of the convertible list.
+	 *
+	 * @return int
+	 */
+	private static function convert_limit(): int {
+		/**
+		 * Internal, for tests only. Not part of the public API.
+		 */
+		return max( 1, (int) apply_filters( 'gistful_migration_convert_limit', self::CONVERT_LIMIT ) );
+	}
+
+	/**
 	 * IDs of block-editor posts that contain convertible gist blocks.
+	 *
+	 * Scans candidate posts in ID order, chunk by chunk, so already-converted or
+	 * non-convertible candidates never hide later posts.
 	 *
 	 * @return int[]
 	 */
 	public static function convertible_ids(): array {
 		global $wpdb;
 
-		$like_block = '%' . $wpdb->esc_like( '<!-- wp:' ) . '%';
-		$like_gist  = '%' . $wpdb->esc_like( 'gist' ) . '%';
-		$ids        = $wpdb->get_col( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->prepare(
-				"SELECT ID FROM {$wpdb->posts} WHERE post_type NOT IN ('revision','auto-draft') AND post_status NOT IN ('trash','auto-draft') AND post_content LIKE %s AND post_content LIKE %s ORDER BY ID ASC LIMIT %d",
-				$like_block,
-				$like_gist,
-				self::CONVERT_LIMIT
-			)
-		);
+		$limit     = self::convert_limit();
+		$like_gist = '%' . $wpdb->esc_like( 'gist' ) . '%';
+		$like_sc   = '%' . $wpdb->esc_like( '<!-- wp:shortcode' ) . '%';
+		$like_emb  = '%' . $wpdb->esc_like( '<!-- wp:embed' ) . '%';
+		$last      = 0;
+		$out       = array();
 
-		$out = array();
-		foreach ( $ids as $id ) {
-			$post = get_post( (int) $id );
-			if ( $post && has_blocks( $post->post_content ) && self::transform( $post->post_content ) !== $post->post_content ) {
-				$out[] = (int) $id;
+		$more = true;
+		while ( $more ) {
+			$ids = $wpdb->get_col( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				$wpdb->prepare(
+					"SELECT ID FROM {$wpdb->posts} WHERE ID > %d AND post_type NOT IN ('revision','auto-draft') AND post_status NOT IN ('trash','auto-draft') AND post_content LIKE %s AND (post_content LIKE %s OR post_content LIKE %s) ORDER BY ID ASC LIMIT %d",
+					$last,
+					$like_gist,
+					$like_sc,
+					$like_emb,
+					$limit
+				)
+			);
+			foreach ( $ids as $id ) {
+				$last = (int) $id;
+				$post = get_post( $last );
+				if ( $post && has_blocks( $post->post_content ) && self::transform( $post->post_content ) !== $post->post_content ) {
+					$out[] = $last;
+					if ( count( $out ) >= $limit ) {
+						return $out;
+					}
+				}
 			}
+			$more = count( $ids ) >= $limit;
 		}
 
 		return $out;
@@ -305,41 +358,53 @@ final class Migrator {
 	 * Preview of a conversion; nothing is saved.
 	 *
 	 * @param int $post_id Post ID.
-	 * @return array{before: string, after: string}
+	 * @return array{before: string, after: string, hash: string}
 	 */
 	public static function preview_conversion( int $post_id ): array {
 		$post   = get_post( $post_id );
 		$before = $post ? $post->post_content : '';
-		if ( ! $post || ! has_blocks( $before ) ) {
-			return array(
-				'before' => $before,
-				'after'  => $before,
-			);
-		}
+		$after  = $post && has_blocks( $before ) ? self::transform( $before ) : $before;
 
 		return array(
 			'before' => $before,
-			'after'  => self::transform( $before ),
+			'after'  => $after,
+			'hash'   => md5( $before ),
 		);
 	}
 
 	/**
 	 * Convert a block post: save a revision, then update the content.
 	 *
-	 * @param int $post_id Post ID.
-	 * @return bool True when the post was changed.
+	 * The post is only modified when a revision holding its current content
+	 * exists, and (when given) the content still matches the previewed hash.
+	 *
+	 * @param int         $post_id Post ID.
+	 * @param string|null $hash    md5 of the previewed content, or null to skip the check.
+	 * @return bool|\WP_Error True when changed, false when nothing to convert.
 	 */
-	public static function convert( int $post_id ): bool {
+	public static function convert( int $post_id, ?string $hash = null ) {
 		$post = get_post( $post_id );
 		if ( ! $post || ! has_blocks( $post->post_content ) ) {
 			return false;
+		}
+		if ( null !== $hash && md5( $post->post_content ) !== $hash ) {
+			return new \WP_Error( 'gistful_content_changed', __( 'The post changed since the preview. Preview it again.', 'gistful' ), array( 'status' => 409 ) );
 		}
 		$after = self::transform( $post->post_content );
 		if ( $after === $post->post_content ) {
 			return false;
 		}
 
+		$no_revision = new \WP_Error( 'gistful_no_revision', __( 'Revisions are disabled for this post, so it was not converted.', 'gistful' ), array( 'status' => 409 ) );
+		if ( ! wp_revisions_enabled( $post ) ) {
+			return $no_revision;
+		}
 		wp_save_post_revision( $post_id );
+		$latest = array_values( wp_get_post_revisions( $post_id, array( 'numberposts' => 1 ) ) );
+		if ( ! $latest || $latest[0]->post_content !== $post->post_content ) {
+			return $no_revision;
+		}
+
 		$result = wp_update_post(
 			array(
 				'ID'           => $post_id,
@@ -347,8 +412,11 @@ final class Migrator {
 			),
 			true
 		);
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
 
-		return ! is_wp_error( $result ) && $result > 0;
+		return $result > 0;
 	}
 
 	/**
@@ -376,7 +444,7 @@ final class Migrator {
 			$attrs = null;
 			$name  = $block['blockName'] ?? '';
 			if ( 'core/embed' === $name ) {
-				$attrs = self::attrs_from_embed( (array) ( $block['attrs'] ?? array() ) );
+				$attrs = self::attrs_from_embed( (array) ( $block['attrs'] ?? array() ), (string) ( $block['innerHTML'] ?? '' ) );
 			} elseif ( 'core/shortcode' === $name ) {
 				$attrs = self::attrs_from_shortcode( (string) ( $block['innerHTML'] ?? '' ) );
 			}
@@ -404,16 +472,33 @@ final class Migrator {
 	/**
 	 * Block attributes for a core/embed block that embeds a gist.
 	 *
+	 * Captioned embeds and embeds with attributes we cannot carry over are left
+	 * untouched; className and align are carried over.
+	 *
 	 * @param array<string, mixed> $attrs Embed block attributes.
+	 * @param string               $html  Block inner HTML.
 	 * @return array<string, mixed>|null
 	 */
-	private static function attrs_from_embed( array $attrs ): ?array {
+	private static function attrs_from_embed( array $attrs, string $html ): ?array {
 		$url = isset( $attrs['url'] ) && is_string( $attrs['url'] ) ? trim( $attrs['url'] ) : '';
 		if ( '' === $url || null === Gist_Url::parse( $url ) ) {
 			return null;
 		}
+		if ( array() !== array_diff( array_keys( $attrs ), array( 'url', 'type', 'providerNameSlug', 'responsive', 'className', 'align' ) ) ) {
+			return null;
+		}
+		if ( preg_match( '#<figcaption[^>]*>(.*?)</figcaption>#is', $html, $m ) && '' !== trim( wp_strip_all_tags( $m[1] ) ) ) {
+			return null;
+		}
 
-		return array( 'url' => $url );
+		$out = array( 'url' => $url );
+		foreach ( array( 'className', 'align' ) as $key ) {
+			if ( isset( $attrs[ $key ] ) && is_string( $attrs[ $key ] ) && '' !== $attrs[ $key ] ) {
+				$out[ $key ] = $attrs[ $key ];
+			}
+		}
+
+		return $out;
 	}
 
 	/**

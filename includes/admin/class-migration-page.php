@@ -78,6 +78,8 @@ final class Migration_Page {
 			'importAsk'      => __( 'This will copy %d legacy backups into Gistful backups. Your posts are not modified.', 'gistful' ),
 			/* translators: 1: number of backup rows, 2: number of transients */
 			'cleanupAsk'     => __( 'This will permanently delete GistPress data: %1$d backup rows, %2$d transients and its stylesheet option. Import the backups first if you want to keep them. Deactivate GistPress before this step.', 'gistful' ),
+			'importPending'  => __( 'Import the backups first (step 2). Cleaning up now would delete GistPress last-good copies that were not imported.', 'gistful' ),
+			'cleanupAnyway'  => __( 'Clean up without importing', 'gistful' ),
 			'confirm'        => __( 'Confirm', 'gistful' ),
 			'cancel'         => __( 'Cancel', 'gistful' ),
 			'stop'           => __( 'Stop', 'gistful' ),

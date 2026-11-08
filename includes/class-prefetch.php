@@ -111,7 +111,7 @@ final class Prefetch {
 		}
 
 		// gistful/gist blocks.
-		if ( function_exists( 'parse_blocks' ) && false !== strpos( $content, 'wp:gistful/gist' ) ) {
+		if ( function_exists( 'parse_blocks' ) && ( false !== strpos( $content, 'wp:gistful/gist' ) || false !== strpos( $content, 'wp:embed' ) ) ) {
 			self::collect_blocks( parse_blocks( $content ), $found );
 		}
 
@@ -183,6 +183,13 @@ final class Prefetch {
 			'showMeta'        => 'show_meta',
 		);
 		foreach ( $blocks as $block ) {
+			// Void-form (or any) core/embed block pointing at a gist.
+			if ( 'core/embed' === ( $block['blockName'] ?? '' ) && is_string( $block['attrs']['url'] ?? null ) ) {
+				$embed = self::attrs_from_url( $block['attrs']['url'] );
+				if ( $embed ) {
+					$found[] = $embed;
+				}
+			}
 			if ( 'gistful/gist' === ( $block['blockName'] ?? '' ) && is_array( $block['attrs'] ?? null ) ) {
 				$attrs = array();
 				foreach ( $block['attrs'] as $key => $value ) {
