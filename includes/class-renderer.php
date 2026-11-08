@@ -330,8 +330,7 @@ final class Renderer {
 	 * @return \DOMDocument|null
 	 */
 	private static function load( string $html ): ?\DOMDocument {
-		$dom = new \DOMDocument();
-		return $dom->loadHTML( '<?xml encoding="utf-8" ?>' . $html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD ) ? $dom : null;
+		return Html_Fragment::load( $html );
 	}
 
 	/**
@@ -341,13 +340,7 @@ final class Renderer {
 	 * @return string
 	 */
 	private static function serialize( \DOMDocument $dom ): string {
-		$out = '';
-		foreach ( $dom->childNodes as $child ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-			if ( XML_PI_NODE !== $child->nodeType ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-				$out .= $dom->saveHTML( $child );
-			}
-		}
-		return $out;
+		return Html_Fragment::serialize( $dom );
 	}
 
 	/**

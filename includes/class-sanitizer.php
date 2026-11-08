@@ -65,8 +65,7 @@ class Sanitizer {
 	 * @return \DOMDocument|null Null when parsing fails.
 	 */
 	protected static function load_dom( string $html ): ?\DOMDocument {
-		$dom = new \DOMDocument();
-		return $dom->loadHTML( '<?xml encoding="utf-8" ?>' . $html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD ) ? $dom : null;
+		return Html_Fragment::load( $html );
 	}
 
 	/**
@@ -76,14 +75,7 @@ class Sanitizer {
 	 * @return string
 	 */
 	private static function serialize( \DOMDocument $dom ): string {
-		$out = '';
-		foreach ( $dom->childNodes as $child ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-			if ( XML_PI_NODE === $child->nodeType ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-				continue;
-			}
-			$out .= $dom->saveHTML( $child );
-		}
-		return $out;
+		return Html_Fragment::serialize( $dom );
 	}
 
 	/**
@@ -262,8 +254,10 @@ class Sanitizer {
 
 		$previous = libxml_use_internal_errors( true );
 		try {
-			$dom = new \DOMDocument();
-			$dom->loadHTML( '<?xml encoding="utf-8" ?>' . $raw_html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD );
+			$dom = Html_Fragment::load( $raw_html );
+			if ( null === $dom ) {
+				return array();
+			}
 			$xpath = new \DOMXPath( $dom );
 			$types = array();
 			foreach ( self::VIEWER_TYPES as $type ) {
