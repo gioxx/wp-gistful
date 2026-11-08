@@ -31,5 +31,7 @@ final class Plugin {
 			return;
 		}
 		self::$booted = true;
+
+		add_action( 'init', array( Embed::class, 'register_style' ) );
 	}
 }
