@@ -252,6 +252,7 @@ final class Settings_Page {
 				<?php endforeach; ?>
 				</tbody>
 			</table>
+			<?php Footer::render(); ?>
 		</div>
 		<?php
 	}
