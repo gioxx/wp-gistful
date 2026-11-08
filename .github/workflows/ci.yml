@@ -29,6 +29,10 @@ jobs:
       matrix:
         php: [ '8.1', '8.2', '8.3', '8.4' ]
         wp: [ '6.5', 'latest' ]
+        exclude:
+          # WordPress supports PHP 8.4 from 6.7; 6.5 core raises deprecations on it.
+          - php: '8.4'
+            wp: '6.5'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
