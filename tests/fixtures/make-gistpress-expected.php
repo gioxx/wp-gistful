@@ -2,8 +2,8 @@
 /**
  * Generator for gistpress-expected-single-lines-2-4-hl-3.html.
  *
- * Runs GistPress 3.0.3's process_gist_html() (GPL-2.0-or-later, by Brady Vercher
- * and Gary Jones) on Sanitizer::clean() of json-single.json's div, with
+ * Based on GistPress by Brady Vercher and Gary Jones. Runs GistPress 3.0.3's
+ * process_gist_html() (GPL-2.0-or-later) on Sanitizer::clean() of json-single.json's div, with
  * lines="2-4" highlight="3". Dev-only: tests/ is excluded from the package.
  *
  * Usage: php tests/fixtures/make-gistpress-expected.php /path/to/gistpress/includes/class-gistpress.php

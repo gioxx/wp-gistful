@@ -185,4 +185,22 @@ class Test_Renderer extends Gistful_Test_Case {
 		$this->assertStringContainsString( 'if a&lt;b &amp;&amp; c', $out );
 		$this->assertStringContainsString( 'aria-label="x.sh"', $out );
 	}
+
+	public function test_plain_does_not_double_decode_and_survives_invalid_utf8() {
+		$out = Renderer::render_plain( array( 'x.txt' => "x &amp; y &lt;b&gt;\n\xff\xfe" ), Attributes::normalize( array( 'id' => 'a' ) ) );
+		$this->assertStringContainsString( 'x &amp;amp; y &amp;lt;b&amp;gt;', $out );
+		$this->assertStringContainsString( "\u{FFFD}", $out );
+	}
+
+	public function test_plain_trailing_newline_has_no_extra_row() {
+		$out = Renderer::render_plain( array( 'x.txt' => "a\nb\n" ), Attributes::normalize( array( 'id' => 'a' ) ) );
+		$this->assertSame( 2, substr_count( $out, '<tr' ) );
+	}
+
+	public function test_comment_in_remote_html_does_not_hijack_notice() {
+		$div = str_replace( '<div class="gist-file"', '<!--gistful-notice-0--><div class="gist-file"', $this->div( 'json-ipynb.json' ) );
+		$out = Renderer::render( new Gist_Payload( $div, array(), 'json' ), Attributes::normalize( array( 'id' => 'abc123' ) ) );
+		$this->assertSame( 1, substr_count( $out, 'gistful-unsupported"' ) );
+		$this->assertSame( 1, substr_count( $out, 'View this file on GitHub' ) );
+	}
 }
