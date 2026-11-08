@@ -103,15 +103,29 @@ final class Embed {
 	}
 
 	/**
-	 * Shortcode callback.
+	 * Shortcode callback. Besides the id attribute, accepts a gist URL as the
+	 * enclosed content: [gist]https://gist.github.com/user/id[/gist].
 	 *
-	 * @param array<string, mixed>|string $atts Shortcode attributes.
+	 * @param array<string, mixed>|string $atts    Shortcode attributes.
+	 * @param string|null                 $content Enclosed content.
 	 * @return string
 	 */
-	public static function shortcode( $atts ): string {
+	public static function shortcode( $atts, $content = null ): string {
 		$post_id = get_the_ID();
+		$atts    = is_array( $atts ) ? $atts : array();
 
-		return self::render( is_array( $atts ) ? $atts : array(), $post_id ? (int) $post_id : null );
+		if ( '' === Attributes::normalize( $atts )['id'] && is_string( $content ) && '' !== trim( $content ) ) {
+			$from_url = self::attrs_from_url( trim( wp_strip_all_tags( $content ) ) );
+			if ( null === $from_url ) {
+				return '';
+			}
+			if ( '' !== ( $atts['file'] ?? '' ) ) {
+				unset( $from_url['file'] );
+			}
+			$atts = array_merge( $atts, $from_url );
+		}
+
+		return self::render( $atts, $post_id ? (int) $post_id : null );
 	}
 
 	/**
@@ -126,9 +140,26 @@ final class Embed {
 	public static function oembed_handler( array $matches, array $attr, string $url, array $rawattr ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
 		unset( $matches, $attr, $rawattr );
 
+		$attrs = self::attrs_from_url( $url );
+		if ( null === $attrs ) {
+			return '';
+		}
+		$attrs['oembed'] = true;
+		$post_id         = get_the_ID();
+
+		return self::render( $attrs, $post_id ? (int) $post_id : null );
+	}
+
+	/**
+	 * Gist ID and file (from the #file- or #file_ anchor) of a gist URL.
+	 *
+	 * @param string $url URL.
+	 * @return array{id:string,file:string}|null Null when it is not a gist URL.
+	 */
+	public static function attrs_from_url( string $url ): ?array {
 		$parsed = Gist_Url::parse( $url );
 		if ( null === $parsed ) {
-			return '';
+			return null;
 		}
 
 		$file = '';
@@ -136,15 +167,10 @@ final class Embed {
 			$names = '-' === $parsed['delimiter'] ? self::file_names( $parsed['id'] ) : array();
 			$file  = Gist_Url::resolve_file( $parsed['anchor'], $parsed['delimiter'], $names );
 		}
-		$post_id = get_the_ID();
 
-		return self::render(
-			array(
-				'id'     => $parsed['id'],
-				'file'   => $file,
-				'oembed' => true,
-			),
-			$post_id ? (int) $post_id : null
+		return array(
+			'id'   => $parsed['id'],
+			'file' => $file,
 		);
 	}
 
