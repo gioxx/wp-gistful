@@ -9,8 +9,8 @@
  */
 
 use Gistful\Attributes;
+use Gistful\Gist_Payload;
 use Gistful\Renderer;
-use Gistful\Sanitizer;
 
 $fixture = static function ( string $name ): string {
 	return (string) json_decode( (string) file_get_contents( GISTFUL_DIR . 'tests/fixtures/' . $name ) )->div;
@@ -24,8 +24,9 @@ $sections = array(
 
 $cols = '';
 foreach ( $sections as $scheme => $title ) {
-	$html  = Renderer::process(
-		Sanitizer::clean( $fixture( 'json-single.json' ) ),
+	// Renderer::render() is the real path: sanitizer, line logic and the .gistful scheme wrapper.
+	$html  = Renderer::render(
+		new Gist_Payload( $fixture( 'json-single.json' ), array(), 'json' ),
 		Attributes::normalize(
 			array(
 				'id'        => 'a',
@@ -35,8 +36,8 @@ foreach ( $sections as $scheme => $title ) {
 			)
 		)
 	);
-	$html .= Renderer::process(
-		Sanitizer::clean( $fixture( 'json-multi.json' ) ),
+	$html .= Renderer::render(
+		new Gist_Payload( $fixture( 'json-multi.json' ), array(), 'json' ),
 		Attributes::normalize(
 			array(
 				'id'     => 'b',
