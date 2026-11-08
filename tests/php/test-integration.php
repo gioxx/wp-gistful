@@ -182,4 +182,73 @@ class Test_Integration extends Gistful_Test_Case {
 		$this->go_to( get_feed_link() );
 		$this->assertStringContainsString( '<!--feed-->', Embed::render( array( 'id' => 'abc123' ) ) );
 	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_importing_does_not_fetch() {
+		$this->mock_ok();
+		define( 'WP_IMPORTING', true );
+		self::factory()->post->create(
+			array(
+				'post_content' => 'https://gist.github.com/gioxx/abc123',
+				'post_status'  => 'publish',
+			)
+		);
+		$this->assertCount( 0, $this->requests );
+	}
+
+	public function test_non_viewable_type_flushes_but_does_not_fetch() {
+		register_post_type( 'gistful_priv', array( 'public' => false ) );
+		$this->mock_ok();
+		$post = self::factory()->post->create(
+			array(
+				'post_type'    => 'gistful_priv',
+				'post_content' => 'nothing',
+				'post_status'  => 'publish',
+			)
+		);
+		set_transient( 'gistful_h_y', 'cached', 60 );
+		update_post_meta( $post, Cache::META_KEYS, array( 'gistful_h_y' ) );
+		wp_update_post(
+			array(
+				'ID'           => $post,
+				'post_content' => 'https://gist.github.com/gioxx/abc123',
+			)
+		);
+		$this->assertFalse( get_transient( 'gistful_h_y' ) );
+		$this->assertCount( 0, $this->requests );
+		unregister_post_type( 'gistful_priv' );
+	}
+
+	public function test_fresh_raw_cache_is_reused_for_backup_without_http() {
+		$this->mock_ok();
+		$args = array(
+			'post_content' => '[gist id="abc123"]',
+			'post_status'  => 'publish',
+		);
+		self::factory()->post->create( $args );
+		$calls = count( $this->requests );
+		$this->assertGreaterThan( 0, $calls );
+		$second = self::factory()->post->create( $args );
+		$this->assertCount( $calls, $this->requests );
+		$this->assertNotEmpty( get_post_meta( $second, Backup::meta_key( 'abc123', '' ), true ) );
+	}
+
+	public function test_dash_anchor_resolution_is_inside_budget() {
+		$this->mock_ok();
+		add_filter( 'gistful_prefetch_budget', '__return_zero' );
+		self::factory()->post->create(
+			array(
+				'post_content' => 'https://gist.github.com/gioxx/abc123#file-a-sh',
+				'post_status'  => 'publish',
+			)
+		);
+		$this->assertCount( 0, $this->requests );
+	}
+
+	public function test_prefetch_detects_paragraph_with_attributes() {
+		$this->assertCount( 1, Prefetch::find_gists( '<p class="x">https://gist.github.com/u/abc123</p>' ) );
+	}
 }
