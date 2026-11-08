@@ -33,5 +33,19 @@ final class Plugin {
 		self::$booted = true;
 
 		add_action( 'init', array( Embed::class, 'register_style' ) );
+		// Priority 20: after GistPress (default priority), so Gistful takes over.
+		add_action( 'init', array( self::class, 'register_embeds' ), 20 );
+		add_action( 'save_post', array( Prefetch::class, 'on_save' ), 10, 2 );
+		Legacy_Hooks::register();
+	}
+
+	/**
+	 * Register the [gist] shortcode and the gist oEmbed handler.
+	 *
+	 * @return void
+	 */
+	public static function register_embeds(): void {
+		add_shortcode( 'gist', array( Embed::class, 'shortcode' ) );
+		wp_embed_register_handler( 'gist', Gist_Url::PATTERN, array( Embed::class, 'oembed_handler' ) );
 	}
 }
