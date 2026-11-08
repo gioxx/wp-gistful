@@ -19,6 +19,7 @@ final class Cache {
 
 	const PREFIX       = 'gistful_';
 	const NEGATIVE_TTL = 600;
+	const FALLBACK_TTL = HOUR_IN_SECONDS;
 	const META_KEYS    = '_gistful_keys';
 	const META_GEN     = '_gistful_keys_gen';
 	const GENERATION   = 'gistful_cache_gen';
@@ -78,6 +79,26 @@ final class Cache {
 	}
 
 	/**
+	 * Configured TTL in seconds (zero or less: caching disabled).
+	 *
+	 * @return int
+	 */
+	public static function default_ttl(): int {
+		return (int) apply_filters( 'gistful_cache_ttl', (int) Settings_Store::get( 'cache_hours' ) * HOUR_IN_SECONDS );
+	}
+
+	/**
+	 * TTL for content from the API fallback (no syntax highlighting): short,
+	 * so the highlighted version comes back soon, but never longer than the
+	 * configured TTL and still zero when caching is disabled.
+	 *
+	 * @return int
+	 */
+	public static function fallback_ttl(): int {
+		return min( self::default_ttl(), self::FALLBACK_TTL );
+	}
+
+	/**
 	 * Store an entry. A TTL of zero or less stores nothing (caching disabled).
 	 *
 	 * @param string   $key Key.
@@ -87,7 +108,7 @@ final class Cache {
 	 */
 	public static function set( string $key, mixed $v, ?int $ttl = null ): void {
 		if ( null === $ttl ) {
-			$ttl = (int) apply_filters( 'gistful_cache_ttl', (int) Settings_Store::get( 'cache_hours' ) * HOUR_IN_SECONDS );
+			$ttl = self::default_ttl();
 		}
 		if ( $ttl <= 0 ) {
 			return;
