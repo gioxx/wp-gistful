@@ -2,8 +2,8 @@
 /**
  * Gist renderer: line ranges, highlight, line numbers, a11y, wrapper, fallbacks.
  *
- * Line range, highlight and line-number semantics derive from GistPress 3.0.3
- * by Brady Vercher and Gary Jones (GPL-2.0-or-later).
+ * Based on GistPress by Brady Vercher and Gary Jones: line range, highlight and
+ * line-number semantics derive from GistPress 3.0.3 (GPL-2.0-or-later).
  *
  * @package Gistful
  */
@@ -107,20 +107,21 @@ final class Renderer {
 		$id   = (string) ( $attr['id'] ?? '' );
 		$html = '<div class="gist">';
 		foreach ( $raw_files as $name => $content ) {
-			$name = (string) $name;
-			$rows = '';
-			$n    = 0;
+			$name    = (string) $name;
+			$rows    = '';
+			$n       = 0;
+			$content = preg_replace( '/\R\z/', '', (string) $content, 1 );
 			foreach ( preg_split( '/\R/', (string) $content ) as $line ) {
 				++$n;
 				$rows .= '<tr><td class="blob-num js-line-number" data-line-number="' . $n . '"></td>'
-					. '<td class="blob-code blob-code-inner js-file-line"><pre><code>' . esc_html( $line ) . '</code></pre></td></tr>';
+					. '<td class="blob-code blob-code-inner js-file-line"><pre><code>' . self::text( $line ) . '</code></pre></td></tr>';
 			}
 			$base  = 'https://gist.github.com/' . $id;
 			$html .= '<div class="gist-file"><div class="gist-data"><div class="file"><div class="blob-wrapper data">'
 				. '<table class="highlight tab-size js-file-line-container"><tbody>' . $rows . '</tbody></table>'
 				. '</div></div></div><div class="gist-meta">'
 				. '<a href="' . esc_url( $base . '/raw/' . rawurlencode( $name ) ) . '">' . esc_html__( 'view raw', 'gistful' ) . '</a> '
-				. '<a href="' . esc_url( $base ) . '">' . esc_html( $name ) . '</a>'
+				. '<a href="' . esc_url( $base ) . '">' . self::text( $name ) . '</a>'
 				. '</div></div>';
 		}
 		$html .= '</div>';
@@ -149,6 +150,16 @@ final class Renderer {
 	 */
 	public static function link( string $id ): string {
 		return make_clickable( 'https://gist.github.com/' . $id );
+	}
+
+	/**
+	 * Escape plain text for HTML: keeps entities literal, substitutes invalid UTF-8.
+	 *
+	 * @param string $s Text.
+	 * @return string
+	 */
+	private static function text( string $s ): string {
+		return htmlspecialchars( $s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
 	}
 
 	/**
@@ -188,6 +199,7 @@ final class Renderer {
 			$xpath   = new \DOMXPath( $dom );
 			$notices = array();
 			$index   = 0;
+			$token   = wp_generate_uuid4();
 			foreach ( iterator_to_array( $xpath->query( '//*[' . self::has_class( 'gist-file' ) . ']' ) ) as $file ) {
 				++$index;
 				$name = Sanitizer::file_name( $xpath, $file );
@@ -200,7 +212,7 @@ final class Renderer {
 				if ( ! in_array( $name, $unsupported, true ) ) {
 					continue;
 				}
-				$marker                              = 'gistful-notice-' . count( $notices );
+				$marker                              = 'gistful-notice-' . $token . '-' . count( $notices );
 				$notices[ '<!--' . $marker . '-->' ] = self::unsupported_notice( $id, $name );
 				$file->parentNode->replaceChild( $dom->createComment( $marker ), $file ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 			}
@@ -242,28 +254,28 @@ final class Renderer {
 			}
 			$kept[] = $row;
 
-			$tokenes = array( 'line' );
+			$classes = array( 'line' );
 			if ( isset( $highlight[ $line_no ] ) ) {
-				$tokenes[] = 'line-highlight';
+				$classes[] = 'line-highlight';
 				if ( '' !== $color ) {
 					foreach ( $row->getElementsByTagName( 'td' ) as $cell ) {
 						$cell->setAttribute( 'style', 'background-color: ' . $color . ' !important' );
 					}
 				}
 			} elseif ( array() !== $highlight ) {
-				$tokenes[] = 'line-no-highlight';
+				$classes[] = 'line-no-highlight';
 			}
 
 			/**
 			 * Filter the classes applied to a line of the gist.
 			 *
-			 * @param string[] $tokenes Class names.
+			 * @param string[] $classes Class names.
 			 * @param int      $line_no Original 1-based line number.
 			 */
-			$tokenes  = apply_filters( 'gistful_line_classes', $tokenes, $line_no );
-			$tokenes  = is_array( $tokenes ) ? array_filter( array_map( 'strval', $tokenes ) ) : array();
+			$classes  = apply_filters( 'gistful_line_classes', $classes, $line_no );
+			$classes  = is_array( $classes ) ? array_filter( array_map( 'strval', $classes ) ) : array();
 			$existing = $row->getAttribute( 'class' );
-			$row->setAttribute( 'class', trim( $existing . ' ' . implode( ' ', $tokenes ) ) );
+			$row->setAttribute( 'class', trim( $existing . ' ' . implode( ' ', $classes ) ) );
 		}
 
 		foreach ( $remove as $row ) {
