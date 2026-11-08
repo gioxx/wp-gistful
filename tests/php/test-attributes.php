@@ -38,6 +38,14 @@ class Test_Attributes extends Gistful_Test_Case {
 		$this->assertSame( array( 2 ), Attributes::normalize( array( 'id' => 'a', 'highlight' => 'x,2,-1' ) )['highlight'] );
 	}
 
+	public function test_lines_open_ended() {
+		$this->assertSame( array( 'min' => 5, 'max' => 0 ), Attributes::normalize( array( 'id' => 'a', 'lines' => '5-' ) )['lines'] );
+		$this->assertSame( array( 'min' => 1, 'max' => 3 ), Attributes::normalize( array( 'id' => 'a', 'lines' => '-3' ) )['lines'] );
+		$this->assertSame( array( 'min' => 5, 'max' => 0 ), Attributes::normalize( array( 'id' => 'a', 'lines' => ' 5 - ' ) )['lines'] );
+		$this->assertSame( array( 'min' => 0, 'max' => 0 ), Attributes::normalize( array( 'id' => 'a', 'lines' => '-' ) )['lines'] );
+		$this->assertSame( array( 'min' => 2, 'max' => 9 ), Attributes::normalize( array( 'id' => 'a', 'lines' => ' 9 - 2 ' ) )['lines'] );
+	}
+
 	public function test_lines_parse() {
 		$this->assertSame( array( 'min' => 2, 'max' => 9 ), Attributes::normalize( array( 'id' => 'a', 'lines' => '2-9' ) )['lines'] );
 		$this->assertSame( array( 'min' => 4, 'max' => 4 ), Attributes::normalize( array( 'id' => 'a', 'lines' => '4' ) )['lines'] );

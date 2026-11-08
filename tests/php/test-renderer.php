@@ -112,6 +112,23 @@ class Test_Renderer extends Gistful_Test_Case {
 		$this->assertSame( substr_count( $clean, '<tr' ), substr_count( $out, '<tr' ) );
 	}
 
+	public function test_open_ended_ranges() {
+		$clean = Sanitizer::clean( $this->div( 'json-single.json' ) );
+		$total = substr_count( $clean, '<tr' );
+		$this->assertGreaterThan( 10, $total );
+
+		$from = Renderer::process( $clean, Attributes::normalize( array( 'id' => 'a', 'lines' => '5-' ) ) );
+		$this->assertSame( $total - 4, substr_count( $from, '<tr' ), '5- shows line 5 to the end' );
+		$this->assertStringContainsString( 'id="file-swakswrapper-sh-LC5"', $from );
+		$this->assertStringNotContainsString( 'id="file-swakswrapper-sh-LC4"', $from );
+		$this->assertStringContainsString( 'id="file-swakswrapper-sh-LC' . $total . '"', $from );
+
+		$to = Renderer::process( $clean, Attributes::normalize( array( 'id' => 'a', 'lines' => '-3' ) ) );
+		$this->assertSame( 3, substr_count( $to, '<tr' ), '-3 shows lines 1 to 3' );
+		$this->assertStringContainsString( 'id="file-swakswrapper-sh-LC1"', $to );
+		$this->assertStringNotContainsString( 'id="file-swakswrapper-sh-LC4"', $to );
+	}
+
 	public function test_line_classes_filter() {
 		add_filter(
 			'gistful_line_classes',
