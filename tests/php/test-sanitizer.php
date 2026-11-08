@@ -100,13 +100,46 @@ class Test_Sanitizer extends Gistful_Test_Case {
 			'tab js'            => array( 'java&#x09;script:alert(1)' ),
 			'colon js'          => array( 'javascript&colon;alert(1)' ),
 			'http'              => array( 'http://x.y/' ),
+			'space in scheme'   => array( 'ht tps://evil.com/t.png' ),
+			'space before colon' => array( 'https ://evil.com/t.png' ),
+			'space after h'     => array( 'h ttps://evil.com/t.png' ),
+			'newline entity'    => array( 'ht&#x0A;tps://evil.com/t.png' ),
 		);
+	}
+
+	/**
+	 * @dataProvider bad_fragments
+	 */
+	public function test_bad_fragment_hrefs_dropped( string $href ) {
+		$out = Sanitizer::clean( '<a href="' . $href . '">A</a>' );
+		$this->assertStringNotContainsString( 'href=', $out );
+		$this->assertStringContainsString( '>A</a>', $out );
+	}
+
+	public function bad_fragments(): array {
+		return array(
+			'colon-slashes' => array( '#x://h' ),
+			'colon-slash'   => array( '#x:/h' ),
+			'colon'         => array( '#user-content-a:b' ),
+		);
+	}
+
+	public function test_kses_failure_fails_closed() {
+		$out = Gistful_Failing_Sanitizer::clean( '<div id="gist1" class="gist"><a href="https://x.y/">A</a><img src="https://x.y/i.png"><script>bad()</script>t</div>' );
+		$this->assertStringNotContainsString( 'href=', $out );
+		$this->assertStringNotContainsString( 'src=', $out );
+		$this->assertStringNotContainsString( 'id=', $out );
+		$this->assertStringNotContainsString( '<script', $out );
+		$this->assertStringContainsString( 'class="gist"', $out );
 	}
 
 	public function test_https_urls_kept() {
 		$out = Sanitizer::clean( '<a href="https://x.y/a">A</a><img src="https://x.y/i.png">' );
 		$this->assertStringContainsString( 'href="https://x.y/a"', $out );
 		$this->assertStringContainsString( 'src="https://x.y/i.png"', $out );
+		$out = Sanitizer::clean( '<a href="https://gist.github.com/a/b#file-foo">A</a><a href="#file-foo">B</a>' );
+		$this->assertStringContainsString( 'href="https://gist.github.com/a/b#file-foo"', $out );
+		$this->assertStringContainsString( 'href="#file-foo"', $out );
 	}
 
 	public function test_large_unclosed_svg_keeps_rows() {
@@ -147,5 +180,14 @@ class Test_Sanitizer extends Gistful_Test_Case {
 		foreach ( array( 'gist123', 'file-a-sh', 'LC4', 'user-content-foo' ) as $id ) {
 			$this->assertStringContainsString( 'id="' . $id . '"', $out );
 		}
+	}
+}
+
+/**
+ * Sanitizer whose DOM loading always fails, to exercise the fail-closed path.
+ */
+class Gistful_Failing_Sanitizer extends Sanitizer {
+	protected static function load_dom( string $html ): ?\DOMDocument {
+		return null;
 	}
 }

@@ -9,13 +9,10 @@ namespace Gistful;
 
 defined( 'ABSPATH' ) || exit;
 
-// DOM API property names (childNodes, nodeType, ...) are not ours to rename.
-// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-
 /**
  * Allowlist based sanitizing of gist markup (wp_kses, https only).
  */
-final class Sanitizer {
+class Sanitizer {
 
 	/**
 	 * Elements removed together with their content before kses runs, because
@@ -40,65 +37,90 @@ final class Sanitizer {
 	 * @return string
 	 */
 	public static function clean( string $html ): string {
-		return wp_kses( self::prepare( $html ), self::allowed_html(), array( 'https' ) );
+		$allowed = self::allowed_html();
+		if ( '' === trim( $html ) ) {
+			return wp_kses( $html, $allowed, array( 'https' ) );
+		}
+
+		$prepared = self::prepare( $html );
+		if ( null !== $prepared ) {
+			$kses  = wp_kses( $prepared, $allowed, array( 'https' ) );
+			$final = self::enforce_urls( $kses );
+			if ( null !== $final ) {
+				return $final;
+			}
+		}
+
+		// Fail closed: no URLs or ids at all when the DOM passes are unavailable.
+		foreach ( $allowed as $tag => $attrs ) {
+			unset( $allowed[ $tag ]['href'], $allowed[ $tag ]['src'], $allowed[ $tag ]['id'] );
+		}
+		return wp_kses( $html, $allowed, array( 'https' ) );
+	}
+
+	/**
+	 * Parse an HTML fragment (overridable seam for tests).
+	 *
+	 * @param string $html Fragment.
+	 * @return \DOMDocument|null Null when parsing fails.
+	 */
+	protected static function load_dom( string $html ): ?\DOMDocument {
+		$dom = new \DOMDocument();
+		return $dom->loadHTML( '<?xml encoding="utf-8" ?>' . $html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD ) ? $dom : null;
+	}
+
+	/**
+	 * Serialize the fragment held by a DOM built with load_dom().
+	 *
+	 * @param \DOMDocument $dom Document.
+	 * @return string
+	 */
+	private static function serialize( \DOMDocument $dom ): string {
+		$out = '';
+		foreach ( $dom->childNodes as $child ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+			if ( XML_PI_NODE === $child->nodeType ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+				continue;
+			}
+			$out .= $dom->saveHTML( $child );
+		}
+		return $out;
 	}
 
 	/**
 	 * DOM pre-pass: drop non-renderable elements with their content, keep only
 	 * https/fragment hrefs, https srcs and known id patterns.
 	 *
-	 * Falls back to the original markup if it cannot be parsed.
-	 *
 	 * @param string $html Raw HTML.
-	 * @return string
+	 * @return string|null Null when the DOM could not be used.
 	 */
-	private static function prepare( string $html ): string {
-		if ( '' === trim( $html ) ) {
-			return $html;
-		}
-
+	private static function prepare( string $html ): ?string {
 		$previous = libxml_use_internal_errors( true );
 		try {
-			$dom = new \DOMDocument();
-			if ( ! $dom->loadHTML( '<?xml encoding="utf-8" ?>' . $html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD ) ) {
-				return $html;
+			$dom = static::load_dom( $html );
+			if ( null === $dom ) {
+				return null;
 			}
 			$xpath = new \DOMXPath( $dom );
 
 			foreach ( self::DROP_WITH_CONTENT as $tag ) {
 				// Snapshot first: removing nodes while iterating a live list skips items.
 				foreach ( iterator_to_array( $dom->getElementsByTagName( $tag ) ) as $node ) {
-					if ( $node->parentNode ) {
-						$node->parentNode->removeChild( $node );
+					if ( $node->parentNode ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+						$node->parentNode->removeChild( $node ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 					}
 				}
 			}
 
-			foreach ( iterator_to_array( $xpath->query( '//*[@href or @src or @id]' ) ) as $el ) {
-				if ( ! $el instanceof \DOMElement ) {
-					continue;
-				}
-				if ( $el->hasAttribute( 'href' ) && ! self::url_ok( $el->getAttribute( 'href' ), true ) ) {
-					$el->removeAttribute( 'href' );
-				}
-				if ( $el->hasAttribute( 'src' ) && ! self::url_ok( $el->getAttribute( 'src' ), false ) ) {
-					$el->removeAttribute( 'src' );
-				}
-				if ( $el->hasAttribute( 'id' ) && 1 !== preg_match( self::ID_PATTERN, $el->getAttribute( 'id' ) ) ) {
+			foreach ( iterator_to_array( $xpath->query( '//*[@id]' ) ) as $el ) {
+				if ( $el instanceof \DOMElement && 1 !== preg_match( self::ID_PATTERN, $el->getAttribute( 'id' ) ) ) {
 					$el->removeAttribute( 'id' );
 				}
 			}
+			self::filter_urls( $xpath );
 
-			$out = '';
-			foreach ( $dom->childNodes as $child ) {
-				if ( XML_PI_NODE === $child->nodeType ) {
-					continue;
-				}
-				$out .= $dom->saveHTML( $child );
-			}
-			return $out;
+			return self::serialize( $dom );
 		} catch ( \Throwable $e ) {
-			return $html;
+			return null;
 		} finally {
 			libxml_clear_errors();
 			libxml_use_internal_errors( $previous );
@@ -106,18 +128,51 @@ final class Sanitizer {
 	}
 
 	/**
-	 * Whether a (decoded) URL may be kept.
+	 * Authoritative check on the final (post-kses) markup.
 	 *
-	 * @param string $url       Attribute value.
-	 * @param bool   $fragments Allow fragment-only values.
-	 * @return bool
+	 * @param string $html Sanitized HTML.
+	 * @return string|null Null when the DOM could not be used.
 	 */
-	private static function url_ok( string $url, bool $fragments ): bool {
-		$url = (string) preg_replace( '/[\x00-\x20\x7f]+/', '', $url );
-		if ( $fragments && 0 === strpos( $url, '#' ) ) {
-			return true;
+	private static function enforce_urls( string $html ): ?string {
+		if ( '' === trim( $html ) ) {
+			return $html;
 		}
-		return 0 === stripos( $url, 'https://' );
+		$previous = libxml_use_internal_errors( true );
+		try {
+			$dom = static::load_dom( $html );
+			if ( null === $dom ) {
+				return null;
+			}
+			self::filter_urls( new \DOMXPath( $dom ) );
+			return self::serialize( $dom );
+		} catch ( \Throwable $e ) {
+			return null;
+		} finally {
+			libxml_clear_errors();
+			libxml_use_internal_errors( $previous );
+		}
+	}
+
+	/**
+	 * Drop href unless https:// or a plain #fragment, and src unless https://.
+	 *
+	 * @param \DOMXPath $xpath XPath for the document.
+	 */
+	private static function filter_urls( \DOMXPath $xpath ): void {
+		foreach ( iterator_to_array( $xpath->query( '//*[@href or @src]' ) ) as $el ) {
+			if ( ! $el instanceof \DOMElement ) {
+				continue;
+			}
+			if ( $el->hasAttribute( 'href' ) ) {
+				$href = trim( $el->getAttribute( 'href' ) );
+				if ( 1 !== preg_match( '#^(?:https://|\#[^:\s]*$)#i', $href ) ) {
+					$el->removeAttribute( 'href' );
+				}
+			}
+			if ( $el->hasAttribute( 'src' ) && 1 !== preg_match( '#^https://#i', trim( $el->getAttribute( 'src' ) ) ) ) {
+				$el->removeAttribute( 'src' );
+			}
+		}
 	}
 
 	/**
