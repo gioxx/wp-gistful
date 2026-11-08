@@ -227,10 +227,11 @@ final class Embed {
 			Backup::maybe_store( $post_id, $id, $file, $payload );
 		}
 
-		// Prefer a highlighted backup over code that came without highlighting.
+		// Prefer a highlighted backup of the same code over code that came
+		// without highlighting (never an outdated backup of edited code).
 		if ( $post_id && $payload->is_degraded() ) {
 			$backup = Backup::get( $post_id, $id, $file );
-			if ( $backup && ! $backup->is_degraded() ) {
+			if ( $backup && ! $backup->is_degraded() && $backup->code_signature() === $payload->code_signature() ) {
 				self::log( "unhighlighted $id, using backup" );
 
 				return $backup;

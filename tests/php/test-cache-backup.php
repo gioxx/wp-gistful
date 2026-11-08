@@ -188,17 +188,44 @@ class Test_Cache_Backup extends Gistful_Test_Case {
 		$this->assertSame( array( 'a.sh' => 'echo hi' ), Backup::get( $post, 'abc', '' )->raw_files );
 	}
 
+	/**
+	 * The same gist as GitHub's highlighted markup and as the API's raw file.
+	 *
+	 * @return Gist_Payload[] Highlighted payload, API payload.
+	 */
+	private function same_code_pair(): array {
+		$base = dirname( __DIR__ ) . '/fixtures/';
+		$div  = (string) json_decode( (string) file_get_contents( $base . 'json-single.json' ) )->div; // phpcs:ignore WordPress.WP.AlternativeFunctions
+		$api  = json_decode( (string) file_get_contents( $base . 'api-gist.json' ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		$raw  = array();
+		foreach ( $api['files'] as $name => $f ) {
+			$raw[ $name ] = $f['content'];
+		}
+
+		return array( new Gist_Payload( $div, array_keys( $raw ), 'json' ), new Gist_Payload( '', array_keys( $raw ), 'api', $raw ) );
+	}
+
 	public function test_api_backup_does_not_replace_a_highlighted_backup() {
+		$post                   = self::factory()->post->create();
+		list( $json, $api_copy ) = $this->same_code_pair();
+		Backup::maybe_store( $post, 'abc', '', $json );
+		Backup::maybe_store( $post, 'abc', '', $api_copy );
+		$this->assertSame( $json->html, Backup::get( $post, 'abc', '' )->html );
+	}
+
+	public function test_api_backup_of_edited_code_replaces_the_backup() {
 		$post = self::factory()->post->create();
-		Backup::maybe_store( $post, 'abc', '', $this->payload() );
+		list( $json ) = $this->same_code_pair();
+		Backup::maybe_store( $post, 'abc', '', $json );
 		Backup::maybe_store( $post, 'abc', '', $this->api_payload() );
-		$this->assertSame( $this->payload()->html, Backup::get( $post, 'abc', '' )->html );
+		$this->assertSame( array( 'a.sh' => 'echo hi' ), Backup::get( $post, 'abc', '' )->raw_files );
 	}
 
 	public function test_api_backup_does_not_shadow_legacy_gistpress_meta() {
-		$post = self::factory()->post->create();
-		update_post_meta( $post, '_gist_raw_' . md5( 'https://gist.github.com/abc.json' ), addslashes( '<div>legacy</div>' ) );
-		Backup::maybe_store( $post, 'abc', '', $this->api_payload() );
-		$this->assertSame( '<div>legacy</div>', Backup::get( $post, 'abc', '' )->html );
+		$post                   = self::factory()->post->create();
+		list( $json, $api_copy ) = $this->same_code_pair();
+		update_post_meta( $post, '_gist_raw_' . md5( 'https://gist.github.com/abc.json' ), wp_slash( $json->html ) );
+		Backup::maybe_store( $post, 'abc', '', $api_copy );
+		$this->assertSame( $json->html, Backup::get( $post, 'abc', '' )->html );
 	}
 }

@@ -366,4 +366,32 @@ class Test_Embed extends Gistful_Test_Case {
 		Backup::maybe_store( $post, 'abc123', '', new Gist_Payload( str_replace( 'class="pl-', 'class="xx-', $this->div( 'json-single.json' ) ), array(), 'json' ) );
 		$this->assertStringContainsString( 'class="pl-', Backup::get( $post, 'abc123', '' )->html );
 	}
+
+	public function test_short_unhighlighted_snippet_is_detected() {
+		$one = '<div class="gist"><div class="blob-wrapper data type-shell"><table><tr><td class="blob-num"></td><td class="blob-code blob-code-inner">echo hi</td></tr></table></div></div>';
+		$this->assertTrue( ( new Gist_Payload( $one, array(), 'json' ) )->is_degraded() );
+		$empty = str_replace( 'echo hi', '', $one );
+		$this->assertFalse( ( new Gist_Payload( $empty, array(), 'json' ) )->is_degraded(), 'No code, nothing to highlight.' );
+	}
+
+	public function test_code_signature_matches_across_json_and_api_copies() {
+		$this->mock( 'gist.github.com', 500, '' );
+		$this->mock( 'api.github.com', 200, $this->fixture( 'api-gist.json' ) );
+		$from_api = Gistful\Source::fetch( 'abc123' );
+		$this->assertSame( $this->payload( 'json-single.json' )->code_signature(), $from_api->code_signature() );
+	}
+
+	public function test_edited_gist_without_highlighting_is_shown_not_the_old_backup() {
+		$post = self::factory()->post->create();
+		Backup::maybe_store( $post, 'abc123', '', $this->payload( 'json-single.json' ) );
+		$data        = json_decode( $this->unhighlighted_json(), true );
+		$data['div'] = str_replace( 'SMTP interactive tester wrapper for swaks', 'edited wrapper', $data['div'] );
+		$this->mock( 'gist.github.com', 200, (string) wp_json_encode( $data ) );
+		$this->go_to( get_permalink( $post ) );
+		have_posts();
+		the_post();
+		$out = Embed::render( array( 'id' => 'abc123' ), $post );
+		$this->assertStringContainsString( 'edited wrapper', $out, 'The current code wins over an outdated backup.' );
+		$this->assertStringContainsString( 'edited wrapper', Backup::get( $post, 'abc123', '' )->html, 'The backup follows the edit.' );
+	}
 }
