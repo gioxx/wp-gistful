@@ -13,12 +13,12 @@ jobs:
     name: PHPCS
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
         with:
           php-version: '8.3'
           coverage: none
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@a8d0d959dab41457692a5e2041bd9b757a119e3f # v3
       - run: composer lint
 
   test:
@@ -30,8 +30,8 @@ jobs:
         php: [ '8.1', '8.2', '8.3', '8.4' ]
         wp: [ '6.5', 'latest' ]
     steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
         with:
           php-version: ${{ matrix.php }}
           extensions: pdo_sqlite, sqlite3, mbstring, dom, zip
@@ -39,7 +39,7 @@ jobs:
       - name: Pin WordPress core
         if: matrix.wp != 'latest'
         run: composer require --dev --no-update "johnpbloch/wordpress-core:${{ matrix.wp }}.*" "wp-phpunit/wp-phpunit:${{ matrix.wp }}.*"
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@a8d0d959dab41457692a5e2041bd9b757a119e3f # v3
         with:
           composer-options: --prefer-dist
       - run: composer test
@@ -55,13 +55,13 @@ jobs:
     name: Plugin Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
           cache: npm
       - name: Build package
         run: bin/package.sh
-      - uses: wordpress/plugin-check-action@v1
+      - uses: wordpress/plugin-check-action@10857da14b6c2246d15402b3e69f777edcf8c12e # v1
         with:
           build-dir: dist/gistful
