@@ -1,0 +1,59 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "gistful/gist",
+  "title": "GitHub Gist",
+  "category": "embed",
+  "description": "Embed a GitHub Gist.",
+  "keywords": [
+    "gist",
+    "github",
+    "code"
+  ],
+  "textdomain": "gistful",
+  "icon": "editor-code",
+  "supports": {
+    "html": false,
+    "align": [
+      "wide",
+      "full"
+    ]
+  },
+  "attributes": {
+    "url": {
+      "type": "string"
+    },
+    "file": {
+      "type": "string"
+    },
+    "lines": {
+      "type": "string"
+    },
+    "linesStart": {
+      "type": "number"
+    },
+    "highlight": {
+      "type": "string"
+    },
+    "highlightColor": {
+      "type": "string"
+    },
+    "showLineNumbers": {
+      "type": "boolean"
+    },
+    "showMeta": {
+      "type": "boolean"
+    },
+    "scheme": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "light",
+        "dark",
+        ""
+      ]
+    }
+  },
+  "editorScript": "file:./index.js",
+  "style": "gistful"
+}
