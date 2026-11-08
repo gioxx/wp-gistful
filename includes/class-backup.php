@@ -69,10 +69,12 @@ final class Backup {
 		if ( $p->is_empty() ) {
 			return;
 		}
-		// An API copy has no highlighting: never let it replace a highlighted one (Gistful or GistPress).
-		if ( '' === $p->html ) {
+		// A copy without highlighting (API fallback, or GitHub serving the gist
+		// unhighlighted) never replaces a highlighted copy (Gistful or GistPress)
+		// of the same code; a copy of edited code does.
+		if ( $p->is_degraded() ) {
 			$current = self::get( $post_id, $id, $file );
-			if ( $current && '' !== $current->html ) {
+			if ( $current && ! $current->is_degraded() && $current->code_signature() === $p->code_signature() ) {
 				return;
 			}
 		}

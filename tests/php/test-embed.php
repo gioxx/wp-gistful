@@ -312,4 +312,86 @@ class Test_Embed extends Gistful_Test_Case {
 		remove_filter( 'gistful_cache_ttl', '__return_zero' );
 		$this->assertFalse( Cache::get( Cache::raw_key( 'abc123', '' ) ) );
 	}
+
+	/**
+	 * The single-file fixture as GitHub sometimes serves it: same markup, no
+	 * syntax highlighting spans.
+	 *
+	 * @return string JSON body.
+	 */
+	private function unhighlighted_json(): string {
+		$data      = json_decode( $this->fixture( 'json-single.json' ), true );
+		$data['div'] = str_replace( 'class="pl-', 'class="xx-', $data['div'] );
+
+		return (string) wp_json_encode( $data );
+	}
+
+	public function test_unhighlighted_payload_is_detected() {
+		$this->assertFalse( $this->payload( 'json-single.json' )->is_degraded() );
+		$plain = new Gist_Payload( str_replace( 'class="pl-', 'class="xx-', $this->div( 'json-single.json' ) ), array(), 'json' );
+		$this->assertTrue( $plain->is_degraded() );
+		$this->assertTrue( ( new Gist_Payload( '', array( 'a.sh' ), 'api', array( 'a.sh' => 'echo' ) ) )->is_degraded() );
+		// Plain text and rendered files (CSV, Markdown) never carry highlighting.
+		$text = str_replace( array( 'class="pl-', 'type-shell' ), array( 'class="xx-', 'type-text' ), $this->div( 'json-single.json' ) );
+		$this->assertFalse( ( new Gist_Payload( $text, array(), 'json' ) )->is_degraded() );
+		$this->assertFalse( $this->payload( 'json-csv.json' )->is_degraded() );
+		$this->assertFalse( $this->payload( 'json-markdown.json' )->is_degraded() );
+	}
+
+	public function test_unhighlighted_response_is_cached_for_one_hour_only() {
+		$this->mock( 'gist.github.com', 200, $this->unhighlighted_json() );
+		$attr = array( 'id' => 'abc123' );
+		$this->assertStringContainsString( 'blob-code', Embed::render( $attr ) );
+		$this->assertEqualsWithDelta( time() + HOUR_IN_SECONDS, (int) get_option( '_transient_timeout_' . Cache::html_key( Gistful\Attributes::normalize( $attr ) ) ), 5 );
+		$this->assertEqualsWithDelta( time() + HOUR_IN_SECONDS, (int) get_option( '_transient_timeout_' . Cache::raw_key( 'abc123', '' ) ), 5 );
+	}
+
+	public function test_unhighlighted_response_falls_back_to_a_highlighted_backup() {
+		$post = self::factory()->post->create();
+		Backup::maybe_store( $post, 'abc123', '', $this->payload( 'json-single.json' ) );
+		$this->mock( 'gist.github.com', 200, $this->unhighlighted_json() );
+		$this->go_to( get_permalink( $post ) );
+		have_posts();
+		the_post();
+		$out = Embed::render( array( 'id' => 'abc123' ), $post );
+		$this->assertStringContainsString( 'class="pl-', $out, 'The highlighted backup should be shown.' );
+		$this->assertStringContainsString( 'class="pl-', Backup::get( $post, 'abc123', '' )->html, 'The backup must not be overwritten.' );
+		$attr = Gistful\Attributes::normalize( array( 'id' => 'abc123' ) );
+		$this->assertEqualsWithDelta( time() + HOUR_IN_SECONDS, (int) get_option( '_transient_timeout_' . Cache::html_key( $attr ) ), 5, 'Not pinned for the full TTL.' );
+	}
+
+	public function test_unhighlighted_response_does_not_replace_a_highlighted_backup() {
+		$post = self::factory()->post->create();
+		Backup::maybe_store( $post, 'abc123', '', $this->payload( 'json-single.json' ) );
+		Backup::maybe_store( $post, 'abc123', '', new Gist_Payload( str_replace( 'class="pl-', 'class="xx-', $this->div( 'json-single.json' ) ), array(), 'json' ) );
+		$this->assertStringContainsString( 'class="pl-', Backup::get( $post, 'abc123', '' )->html );
+	}
+
+	public function test_short_unhighlighted_snippet_is_detected() {
+		$one = '<div class="gist"><div class="blob-wrapper data type-shell"><table><tr><td class="blob-num"></td><td class="blob-code blob-code-inner">echo hi</td></tr></table></div></div>';
+		$this->assertTrue( ( new Gist_Payload( $one, array(), 'json' ) )->is_degraded() );
+		$empty = str_replace( 'echo hi', '', $one );
+		$this->assertFalse( ( new Gist_Payload( $empty, array(), 'json' ) )->is_degraded(), 'No code, nothing to highlight.' );
+	}
+
+	public function test_code_signature_matches_across_json_and_api_copies() {
+		$this->mock( 'gist.github.com', 500, '' );
+		$this->mock( 'api.github.com', 200, $this->fixture( 'api-gist.json' ) );
+		$from_api = Gistful\Source::fetch( 'abc123' );
+		$this->assertSame( $this->payload( 'json-single.json' )->code_signature(), $from_api->code_signature() );
+	}
+
+	public function test_edited_gist_without_highlighting_is_shown_not_the_old_backup() {
+		$post = self::factory()->post->create();
+		Backup::maybe_store( $post, 'abc123', '', $this->payload( 'json-single.json' ) );
+		$data        = json_decode( $this->unhighlighted_json(), true );
+		$data['div'] = str_replace( 'SMTP interactive tester wrapper for swaks', 'edited wrapper', $data['div'] );
+		$this->mock( 'gist.github.com', 200, (string) wp_json_encode( $data ) );
+		$this->go_to( get_permalink( $post ) );
+		have_posts();
+		the_post();
+		$out = Embed::render( array( 'id' => 'abc123' ), $post );
+		$this->assertStringContainsString( 'edited wrapper', $out, 'The current code wins over an outdated backup.' );
+		$this->assertStringContainsString( 'edited wrapper', Backup::get( $post, 'abc123', '' )->html, 'The backup follows the edit.' );
+	}
 }
