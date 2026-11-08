@@ -42,6 +42,38 @@ class Test_Integration extends Gistful_Test_Case {
 		$this->assertStringContainsString( 'gistful', do_shortcode( '[gist id="abc123"]' ) );
 	}
 
+	public function test_shortcode_with_enclosed_url() {
+		\Gistful\Plugin::register_embeds();
+		$this->mock_ok();
+		$out = do_shortcode( '[gist]https://gist.github.com/gioxx/abc123[/gist]' );
+		$this->assertStringContainsString( 'class="gistful', $out );
+		$this->assertSame( Embed::render( array( 'id' => 'abc123' ) ), $out );
+	}
+
+	public function test_shortcode_with_enclosed_url_resolves_anchor() {
+		\Gistful\Plugin::register_embeds();
+		$this->mock_ok();
+		do_shortcode( '[gist] https://gist.github.com/gioxx/abc123#file_swaksWrapper.sh [/gist]' );
+		$this->assertStringContainsString( '?file=swaksWrapper.sh', end( $this->requests )['url'] );
+	}
+
+	public function test_shortcode_id_wins_over_enclosed_content_and_junk_is_ignored() {
+		\Gistful\Plugin::register_embeds();
+		$this->mock_ok();
+		$this->assertSame( Embed::render( array( 'id' => 'abc123' ) ), do_shortcode( '[gist id="abc123"]https://gist.github.com/u/def456[/gist]' ) );
+		$this->assertSame( '', do_shortcode( '[gist]https://example.com/abc123[/gist]' ) );
+	}
+
+	public function test_prefetch_finds_enclosed_shortcode_url() {
+		$ids = array_map(
+			static function ( $a ) {
+				return $a['id'];
+			},
+			Prefetch::find_gists( '[gist]https://gist.github.com/u/ccc333[/gist]' )
+		);
+		$this->assertSame( array( 'ccc333' ), $ids );
+	}
+
 	public function test_rest_oembed_proxy_renders_gist() {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
 		$this->mock_ok();

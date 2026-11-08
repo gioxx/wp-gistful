@@ -105,8 +105,13 @@ final class Prefetch {
 				if ( '[' === $match[1] && ']' === $match[6] ) {
 					continue; // Escaped by doubled brackets.
 				}
-				$atts    = shortcode_parse_atts( $match[3] );
-				$found[] = is_array( $atts ) ? $atts : array();
+				$atts = shortcode_parse_atts( $match[3] );
+				$atts = is_array( $atts ) ? $atts : array();
+				if ( '' === Attributes::normalize( $atts )['id'] && '' !== trim( $match[5] ) ) {
+					// Enclosed URL: [gist]https://gist.github.com/user/id[/gist].
+					$atts = array_merge( $atts, self::attrs_from_url( trim( wp_strip_all_tags( $match[5] ) ) ) );
+				}
+				$found[] = $atts;
 			}
 		}
 
