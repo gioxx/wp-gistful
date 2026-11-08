@@ -39,6 +39,7 @@ final class Plugin {
 		// Priority 20: after GistPress (default priority), so Gistful takes over.
 		add_action( 'init', array( self::class, 'register_embeds' ), 20 );
 		add_action( 'save_post', array( Prefetch::class, 'on_save' ), 10, 2 );
+		Placeholders::register();
 		Legacy_Hooks::register();
 		Admin\Settings_Page::register();
 		Admin\Migration_Controller::register();
