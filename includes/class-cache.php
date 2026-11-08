@@ -20,6 +20,27 @@ final class Cache {
 	const PREFIX       = 'gistful_';
 	const NEGATIVE_TTL = 600;
 	const META_KEYS    = '_gistful_keys';
+	const GENERATION   = 'gistful_cache_gen';
+
+	/**
+	 * Current cache generation. It is mixed into every key, so bumping it makes
+	 * all earlier entries unreachable even in a persistent object cache.
+	 *
+	 * @return int
+	 */
+	public static function generation(): int {
+		return (int) get_option( self::GENERATION, 0 );
+	}
+
+	/**
+	 * Key of the cached gist file-name list.
+	 *
+	 * @param string $id Gist ID.
+	 * @return string
+	 */
+	public static function names_key( string $id ): string {
+		return self::PREFIX . 'f_' . md5( self::generation() . "|$id" );
+	}
 
 	/**
 	 * Key of the processed-HTML cache entry.
@@ -31,7 +52,7 @@ final class Cache {
 		unset( $attr['oembed'] );
 		ksort( $attr );
 
-		return self::PREFIX . 'h_' . md5( (string) wp_json_encode( $attr ) );
+		return self::PREFIX . 'h_' . md5( self::generation() . '|' . wp_json_encode( $attr ) );
 	}
 
 	/**
@@ -42,7 +63,7 @@ final class Cache {
 	 * @return string
 	 */
 	public static function raw_key( string $id, string $file ): string {
-		return self::PREFIX . 'r_' . md5( "$id|$file" );
+		return self::PREFIX . 'r_' . md5( self::generation() . "|$id|$file" );
 	}
 
 	/**
@@ -129,15 +150,18 @@ final class Cache {
 	}
 
 	/**
-	 * Delete every Gistful transient.
+	 * Invalidate every Gistful transient: bump the generation (works with a
+	 * persistent object cache) and delete the rows that are in the database.
 	 *
 	 * @return void
 	 */
 	public static function flush_all(): void {
 		global $wpdb;
 
+		update_option( self::GENERATION, self::generation() + 1, true );
+
 		// Go through the API so the object cache stays in sync. With an external
-		// object cache transients are not in the options table and expire on their own.
+		// object cache the generation bump above makes old entries unreachable.
 		$like  = $wpdb->esc_like( '_transient_' ) . '%' . $wpdb->esc_like( self::PREFIX ) . '%';
 		$names = $wpdb->get_col( $wpdb->prepare( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s", $like ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		foreach ( $names as $name ) {
