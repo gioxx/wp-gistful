@@ -29,3 +29,8 @@ test( 'maps enclosed gist url', () => {
 	expect( fromShortcode.attributes.url.shortcode( { named: {} }, { shortcode: { content: 'https://gist.github.com/u/abc123' } } ) )
 		.toBe( 'https://gist.github.com/u/abc123' );
 } );
+
+test( 'maps the copy attribute', () => {
+	expect( shortcodeToAttributes( { id: 'abc123', copy: 'no' } ).copy ).toBe( false );
+	expect( shortcodeToAttributes( { id: 'abc123' } ).copy ).toBeUndefined();
+} );

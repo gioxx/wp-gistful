@@ -7,7 +7,8 @@ Based on GistPress by Brady Vercher and Gary Jones. Licensed GPL-3.0-or-later.
 ## Features
 
 - Block, `[gist]` shortcode and pasted URLs; drop-in replacement for GistPress.
-- Server-side fetch and cache; local CSS and no scripts, so the plugin's own assets make no browser requests to GitHub (images inside Markdown gists are served by GitHub).
+- Server-side fetch and cache; local CSS and a small local script only for the copy buttons, so the plugin's own assets make no browser requests to GitHub (images inside Markdown gists are served by GitHub).
+- "Copy" button per code and CSV file and "Copy all" on multi-file gists (only the lines shown; Markdown, shown rendered, has none); opt out in the settings, per block or with `copy="no"`.
 - Dark mode (auto or forced), line numbers, ranges, highlighting, multi-file gists.
 - Markdown and CSV render inline; files GitHub shows with special viewers (notebooks, maps, 3D models) get a link to GitHub.
 - GistPress migration tool, WP-CLI cache command, hardened HTML sanitizing.

@@ -178,7 +178,11 @@ final class Renderer {
 			$scheme = 'auto';
 		}
 
-		return '<div class="gistful" data-scheme="' . esc_attr( $scheme ) . '">' . $html . '</div>';
+		// The copy script (assets/js/copy.js) adds its buttons to flagged gists
+		// only: those with code or CSV to copy (Markdown is shown rendered).
+		$copy = ! empty( $attr['copy'] ) && 1 === preg_match( '/class="[^"]*\b(?:blob-code|csv-data)\b/', $html ) ? ' data-copy="1"' : '';
+
+		return '<div class="gistful" data-scheme="' . esc_attr( $scheme ) . '"' . $copy . '>' . $html . '</div>';
 	}
 
 	/**

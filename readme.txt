@@ -19,6 +19,7 @@ Features:
 * Block editor block, `[gist]` shortcode and pasted gist URLs (oEmbed-style) all supported.
 * Local CSS, no browser requests to GitHub from the plugin's own CSS and scripts. Gists are fetched and cached by your server. The only exception is images inside Markdown gists, which are served by GitHub.
 * Dark mode: follows the visitor's system preference automatically, or force light or dark in the settings.
+* "Copy" button on every code and CSV file and "Copy all" on multi-file gists: copies exactly the lines shown, without line numbers (CSV files copy as CSV). Markdown files are shown rendered, so they have no Copy button. Can be turned off in the settings, per block, or with `copy="no"` on the shortcode.
 * Line numbers, line ranges and line highlighting, file selection for multi-file gists, and Markdown and CSV files rendered inline. Files GitHub shows with special viewers (notebooks, maps, 3D models) get a link to GitHub.
 * Migration tool (Tools > Gistful Migration) to convert GistPress content, with a backup so changes can be reverted.
 * Security hardening: gist HTML is sanitized with a strict allow-list, requests go only to GitHub over verified TLS with short timeouts and size limits, and the optional API token is read from a constant and never stored in the database or printed.
@@ -46,6 +47,10 @@ By default the color scheme follows the visitor's system preference. In Settings
 = How do I disable the plugin's CSS? =
 
 Untick the option to load the stylesheet in Settings > Gistful, then style the `.gistful` markup from your theme.
+
+= Does the plugin load any JavaScript on the frontend? =
+
+Only for the copy buttons: a small script served from your site (no external requests), loaded in the footer and only on pages that show a gist with the copy button enabled. Without JavaScript the gists display normally, just without the buttons. Turn the buttons off in Settings > Gistful, per block, or with `copy="no"` on the shortcode, and no script is loaded at all.
 
 = Can I use a GitHub token to raise API rate limits? =
 

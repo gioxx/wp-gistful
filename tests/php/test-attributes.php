@@ -71,7 +71,7 @@ class Test_Attributes extends Gistful_Test_Case {
 	public function test_output_keys_and_lines_start() {
 		$out = Attributes::normalize( array( 'id' => 'a', 'lines_start' => '-7' ) );
 		$this->assertSame(
-			array( 'id', 'file', 'lines', 'lines_start', 'highlight', 'highlight_color', 'show_line_numbers', 'show_meta', 'embed_stylesheet', 'scheme', 'oembed' ),
+			array( 'id', 'file', 'lines', 'lines_start', 'highlight', 'highlight_color', 'show_line_numbers', 'show_meta', 'embed_stylesheet', 'copy', 'scheme', 'oembed' ),
 			array_keys( $out )
 		);
 		$this->assertSame( 7, $out['lines_start'] );

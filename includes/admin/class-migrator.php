@@ -562,6 +562,9 @@ final class Migrator {
 		if ( isset( $raw['show_meta'] ) ) {
 			$attrs['showMeta'] = $norm['show_meta'];
 		}
+		if ( isset( $raw['copy'] ) ) {
+			$attrs['copy'] = $norm['copy'];
+		}
 		if ( '' !== $norm['scheme'] ) {
 			$attrs['scheme'] = $norm['scheme'];
 		}

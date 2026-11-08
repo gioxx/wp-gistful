@@ -35,7 +35,7 @@ class Test_Settings_Page extends Gistful_Test_Case {
 		$this->assertSame( 168, Settings_Page::sanitize( array( 'cache_hours' => '9999' ) )['cache_hours'] );
 		$this->assertSame( 12, Settings_Page::sanitize( array( 'cache_hours' => 'abc' ) )['cache_hours'] );
 		$this->assertSame( 'dark', Settings_Page::sanitize( array( 'scheme' => 'dark' ) )['scheme'] );
-		$this->assertSame( array( 'scheme', 'load_css', 'show_line_numbers', 'show_meta', 'cache_hours' ), array_keys( Settings_Page::sanitize( 'junk' ) ) );
+		$this->assertSame( array( 'scheme', 'load_css', 'show_line_numbers', 'show_meta', 'copy_button', 'cache_hours' ), array_keys( Settings_Page::sanitize( 'junk' ) ) );
 	}
 
 	public function test_clear_cache_requires_cap_and_nonce() {

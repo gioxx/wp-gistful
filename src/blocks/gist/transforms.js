@@ -43,6 +43,9 @@ export const shortcodeToAttributes = ( named = {}, content = '' ) => {
 	if ( named.show_meta !== undefined ) {
 		attrs.showMeta = toBool( named.show_meta );
 	}
+	if ( named.copy !== undefined ) {
+		attrs.copy = toBool( named.copy );
+	}
 	return attrs;
 };
 
@@ -65,6 +68,7 @@ export const fromShortcode = {
 		highlightColor: { type: 'string', shortcode: ( { named }, { shortcode } = {} ) => shortcodeToAttributes( named, shortcode?.content ).highlightColor },
 		showLineNumbers: { type: 'boolean', shortcode: ( { named }, { shortcode } = {} ) => shortcodeToAttributes( named, shortcode?.content ).showLineNumbers },
 		showMeta: { type: 'boolean', shortcode: ( { named }, { shortcode } = {} ) => shortcodeToAttributes( named, shortcode?.content ).showMeta },
+		copy: { type: 'boolean', shortcode: ( { named }, { shortcode } = {} ) => shortcodeToAttributes( named, shortcode?.content ).copy },
 		scheme: { type: 'string', shortcode: ( { named }, { shortcode } = {} ) => shortcodeToAttributes( named, shortcode?.content ).scheme },
 	},
 };

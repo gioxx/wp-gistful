@@ -36,6 +36,7 @@ final class Attributes {
 				'show_line_numbers' => Settings_Store::get( 'show_line_numbers' ),
 				'show_meta'         => Settings_Store::get( 'show_meta' ),
 				'embed_stylesheet'  => Settings_Store::get( 'load_css' ),
+				'copy'              => Settings_Store::get( 'copy_button' ),
 				'scheme'            => '',
 				'oembed'            => false,
 			)
@@ -54,6 +55,7 @@ final class Attributes {
 			'show_line_numbers' => self::to_bool( $atts['show_line_numbers'] ),
 			'show_meta'         => self::to_bool( $atts['show_meta'] ),
 			'embed_stylesheet'  => self::to_bool( $atts['embed_stylesheet'] ),
+			'copy'              => self::to_bool( $atts['copy'] ),
 			'scheme'            => in_array( $scheme, array( 'auto', 'light', 'dark' ), true ) ? $scheme : '',
 			'oembed'            => self::to_bool( $atts['oembed'] ),
 		);
