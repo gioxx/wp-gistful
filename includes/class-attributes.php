@@ -105,23 +105,37 @@ final class Attributes {
 	}
 
 	/**
-	 * Parse "N" or "N-M" into min/max.
+	 * Parse "N", "N-M", "N-" (N to the end) or "-M" (1 to M) into min/max.
+	 * Zero means open: min 0 starts at the first line, max 0 runs to the end.
 	 *
 	 * @param mixed $v Value.
 	 * @return array{min:int,max:int}
 	 */
 	private static function parse_lines( mixed $v ): array {
 		$v = is_scalar( $v ) ? trim( (string) $v ) : '';
-		if ( preg_match( '/^(\d+)\s*-\s*(\d+)$/', $v, $m ) ) {
-			$a = (int) $m[1];
-			$b = (int) $m[2];
+		if ( preg_match( '/^\s*(\d*)\s*-\s*(\d*)\s*$/', $v, $m ) ) {
+			if ( '' !== $m[1] && '' !== $m[2] ) {
+				$a = (int) $m[1];
+				$b = (int) $m[2];
 
-			return array(
-				'min' => min( $a, $b ),
-				'max' => max( $a, $b ),
-			);
-		}
-		if ( preg_match( '/^\d+$/', $v ) ) {
+				return array(
+					'min' => min( $a, $b ),
+					'max' => max( $a, $b ),
+				);
+			}
+			if ( '' !== $m[1] ) {
+				return array(
+					'min' => (int) $m[1],
+					'max' => 0,
+				);
+			}
+			if ( '' !== $m[2] && (int) $m[2] > 0 ) {
+				return array(
+					'min' => 1,
+					'max' => (int) $m[2],
+				);
+			}
+		} elseif ( preg_match( '/^\d+$/', $v ) ) {
 			return array(
 				'min' => (int) $v,
 				'max' => (int) $v,

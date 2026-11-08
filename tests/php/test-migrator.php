@@ -159,6 +159,14 @@ class Test_Migrator extends Gistful_Test_Case {
 		$this->assertSame( 0, $this->count_meta_like( '_gist_raw_' ) );
 	}
 
+	public function test_convert_keeps_open_ended_lines() {
+		$post = self::factory()->post->create( array( 'post_content' => "<!-- wp:shortcode -->[gist id=\"abc123\" lines=\"5-\"]<!-- /wp:shortcode -->\n\n<!-- wp:shortcode -->[gist id=\"def456\" lines=\"-3\"]<!-- /wp:shortcode -->" ) );
+		$this->assertTrue( Migrator::convert( $post ) );
+		$content = get_post( $post )->post_content;
+		$this->assertStringContainsString( '<!-- wp:gistful/gist {"url":"https://gist.github.com/abc123","lines":"5-"} /-->', $content );
+		$this->assertStringContainsString( '<!-- wp:gistful/gist {"url":"https://gist.github.com/def456","lines":"1-3"} /-->', $content );
+	}
+
 	public function test_convert_skips_classic_posts() {
 		$post = self::factory()->post->create( array( 'post_content' => 'https://gist.github.com/gioxx/abc123' ) );
 		$this->assertFalse( Migrator::convert( $post ) );

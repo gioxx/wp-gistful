@@ -539,6 +539,9 @@ final class Migrator {
 		}
 		if ( $norm['lines']['max'] > 0 ) {
 			$attrs['lines'] = $norm['lines']['min'] === $norm['lines']['max'] ? (string) $norm['lines']['min'] : $norm['lines']['min'] . '-' . $norm['lines']['max'];
+		} elseif ( $norm['lines']['min'] > 0 ) {
+			// Open-ended range: from min to the end.
+			$attrs['lines'] = $norm['lines']['min'] . '-';
 		}
 		if ( $norm['lines_start'] > 0 ) {
 			$attrs['linesStart'] = $norm['lines_start'];
