@@ -174,7 +174,7 @@ class Test_Renderer extends Gistful_Test_Case {
 	public function test_wrapper_scheme_and_a11y() {
 		update_option( 'gistful_settings', array( 'scheme' => 'dark' ) );
 		$out = Renderer::render( $this->payload( 'json-single.json' ), Attributes::normalize( array( 'id' => 'a' ) ) );
-		$this->assertStringStartsWith( '<div class="gistful" data-scheme="dark">', $out );
+		$this->assertStringStartsWith( '<div class="gistful" data-scheme="dark" data-copy="1">', $out );
 		$this->assertStringContainsString( 'tabindex="0"', $out );
 		$this->assertStringContainsString( 'role="region"', $out );
 		$this->assertStringContainsString( 'aria-label="swaksWrapper.sh"', $out );
@@ -183,7 +183,7 @@ class Test_Renderer extends Gistful_Test_Case {
 	public function test_attribute_scheme_overrides_setting() {
 		update_option( 'gistful_settings', array( 'scheme' => 'dark' ) );
 		$out = Renderer::render( $this->payload( 'json-single.json' ), Attributes::normalize( array( 'id' => 'a', 'scheme' => 'light' ) ) );
-		$this->assertStringStartsWith( '<div class="gistful" data-scheme="light">', $out );
+		$this->assertStringStartsWith( '<div class="gistful" data-scheme="light" data-copy="1">', $out );
 	}
 
 	public function test_unsupported_file_becomes_notice() {

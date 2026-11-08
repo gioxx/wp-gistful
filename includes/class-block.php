@@ -79,6 +79,7 @@ final class Block {
 		foreach ( array(
 			'showLineNumbers' => 'show_line_numbers',
 			'showMeta'        => 'show_meta',
+			'copy'            => 'copy',
 		) as $from => $to ) {
 			if ( isset( $attributes[ $from ] ) && is_bool( $attributes[ $from ] ) ) {
 				$mapped[ $to ] = $attributes[ $from ] ? 'true' : 'false';

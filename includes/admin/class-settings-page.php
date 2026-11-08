@@ -94,6 +94,7 @@ final class Settings_Page {
 			'load_css'          => ! empty( $input['load_css'] ),
 			'show_line_numbers' => ! empty( $input['show_line_numbers'] ),
 			'show_meta'         => ! empty( $input['show_meta'] ),
+			'copy_button'       => ! empty( $input['copy_button'] ),
 			'cache_hours'       => is_numeric( $hours ) ? max( 1, min( 168, (int) $hours ) ) : $defaults['cache_hours'],
 		);
 	}
@@ -228,6 +229,13 @@ final class Settings_Page {
 					<tr>
 						<th scope="row"><?php echo esc_html__( 'Meta bar', 'gistful' ); ?></th>
 						<td><label><?php $tick( 'show_meta' ); ?> <?php echo esc_html__( 'Show the file name and "view raw" bar by default', 'gistful' ); ?></label></td>
+					</tr>
+					<tr>
+						<th scope="row"><?php echo esc_html__( 'Copy button', 'gistful' ); ?></th>
+						<td>
+							<label><?php $tick( 'copy_button' ); ?> <?php echo esc_html__( 'Show a "Copy" button on each file, and "Copy all" on gists with more than one file', 'gistful' ); ?></label>
+							<p class="description"><?php echo esc_html__( 'Adds a small local script to pages that show a gist.', 'gistful' ); ?></p>
+						</td>
 					</tr>
 					<tr>
 						<th scope="row"><label for="gistful-cache-hours"><?php echo esc_html__( 'Cache duration (hours)', 'gistful' ); ?></label></th>

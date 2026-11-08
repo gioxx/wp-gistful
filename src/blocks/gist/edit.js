@@ -19,7 +19,7 @@ const fromTriState = ( value ) => ( value === 'default' ? undefined : value === 
 export default function Edit( { attributes, setAttributes } ) {
 	const blockProps = useBlockProps();
 	const [ draft, setDraft ] = useState( '' );
-	const { url, file, lines, linesStart, highlight, highlightColor, showLineNumbers, showMeta, scheme } = attributes;
+	const { url, file, lines, linesStart, highlight, highlightColor, showLineNumbers, showMeta, copy, scheme } = attributes;
 
 	const triOptions = [
 		{ label: __( 'Use plugin default', 'gistful' ), value: 'default' },
@@ -39,6 +39,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			<PanelBody title={ __( 'Display', 'gistful' ) } initialOpen={ false }>
 				<SelectControl __nextHasNoMarginBottom __next40pxDefaultSize label={ __( 'Line numbers', 'gistful' ) } value={ triState( showLineNumbers ) } options={ triOptions } onChange={ ( v ) => setAttributes( { showLineNumbers: fromTriState( v ) } ) } />
 				<SelectControl __nextHasNoMarginBottom __next40pxDefaultSize label={ __( 'Meta footer', 'gistful' ) } value={ triState( showMeta ) } options={ triOptions } onChange={ ( v ) => setAttributes( { showMeta: fromTriState( v ) } ) } />
+				<SelectControl __nextHasNoMarginBottom __next40pxDefaultSize label={ __( 'Copy button', 'gistful' ) } value={ triState( copy ) } options={ triOptions } onChange={ ( v ) => setAttributes( { copy: fromTriState( v ) } ) } />
 				<SelectControl
 					__nextHasNoMarginBottom
 					__next40pxDefaultSize

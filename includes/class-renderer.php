@@ -178,7 +178,10 @@ final class Renderer {
 			$scheme = 'auto';
 		}
 
-		return '<div class="gistful" data-scheme="' . esc_attr( $scheme ) . '">' . $html . '</div>';
+		// The copy script (assets/js/copy.js) adds its buttons to flagged gists only.
+		$copy = empty( $attr['copy'] ) ? '' : ' data-copy="1"';
+
+		return '<div class="gistful" data-scheme="' . esc_attr( $scheme ) . '"' . $copy . '>' . $html . '</div>';
 	}
 
 	/**

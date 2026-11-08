@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Copy buttons: "Copy" on every file and "Copy all" on gists with more than one file. They copy exactly the lines shown (no line numbers), announce the result to screen readers and fall back to the legacy copy command on sites without HTTPS. A small deferred script, served from the site, loads only on pages that show a gist with the buttons; without JavaScript nothing changes. Opt out globally (Settings > Gistful), per block (Display panel) or with `copy="no"` on the shortcode.
 - Plugins screen: "View on GitHub" (when the row does not already link to the repository) and "More plugins by Gioxx" links under the plugin description.
 
 ## 0.1.0 - 2026-11-08

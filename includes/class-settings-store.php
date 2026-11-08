@@ -30,6 +30,7 @@ final class Settings_Store {
 			'load_css'          => true,
 			'show_line_numbers' => true,
 			'show_meta'         => true,
+			'copy_button'       => true,
 			'cache_hours'       => 12,
 		);
 	}
@@ -49,6 +50,7 @@ final class Settings_Store {
 			'load_css'          => (bool) $merged['load_css'],
 			'show_line_numbers' => (bool) $merged['show_line_numbers'],
 			'show_meta'         => (bool) $merged['show_meta'],
+			'copy_button'       => (bool) $merged['copy_button'],
 			'cache_hours'       => (int) $merged['cache_hours'],
 		);
 	}

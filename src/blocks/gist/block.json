@@ -18,6 +18,7 @@
 		"highlightColor": { "type": "string" },
 		"showLineNumbers": { "type": "boolean" },
 		"showMeta": { "type": "boolean" },
+		"copy": { "type": "boolean" },
 		"scheme": { "type": "string", "enum": [ "auto", "light", "dark", "" ] }
 	},
 	"editorScript": "file:./index.js",

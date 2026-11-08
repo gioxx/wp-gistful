@@ -20,6 +20,42 @@ final class Embed {
 	const STYLE_HANDLE = 'gistful';
 
 	/**
+	 * Copy button script handle.
+	 */
+	const SCRIPT_HANDLE = 'gistful-copy';
+
+	/**
+	 * Load the copy button script (deferred, in the footer) with its labels.
+	 *
+	 * @return void
+	 */
+	public static function enqueue_copy_script(): void {
+		if ( wp_script_is( self::SCRIPT_HANDLE, 'enqueued' ) ) {
+			return;
+		}
+		wp_enqueue_script(
+			self::SCRIPT_HANDLE,
+			GISTFUL_URL . 'assets/js/copy.js',
+			array(),
+			GISTFUL_VERSION,
+			array(
+				'in_footer' => true,
+				'strategy'  => 'defer',
+			)
+		);
+		$labels = array(
+			'copy'         => __( 'Copy', 'gistful' ),
+			'copyAll'      => __( 'Copy all', 'gistful' ),
+			'copied'       => __( 'Copied', 'gistful' ),
+			'failed'       => __( 'Copy failed', 'gistful' ),
+			/* translators: %s: file name */
+			'copyFile'     => __( 'Copy %s', 'gistful' ),
+			'copyAllLabel' => __( 'Copy all files', 'gistful' ),
+		);
+		wp_add_inline_script( self::SCRIPT_HANDLE, 'window.gistfulCopy = ' . wp_json_encode( $labels ) . ';', 'before' );
+	}
+
+	/**
 	 * Register the stylesheet handle (idempotent).
 	 *
 	 * @return void
@@ -97,6 +133,9 @@ final class Embed {
 		if ( ! $is_link && $attr['embed_stylesheet'] && Settings_Store::get( 'load_css' ) ) {
 			self::register_style();
 			wp_enqueue_style( self::STYLE_HANDLE );
+		}
+		if ( ! $is_link && $attr['copy'] ) {
+			self::enqueue_copy_script();
 		}
 
 		$html = (string) apply_filters( 'gistful_html', $html, $url, $attr, $post_id );
