@@ -67,4 +67,16 @@ class Test_Copy_Button extends Gistful_Test_Case {
 		$this->assertStringContainsString( 'class="gistful"', $html );
 		$this->assertStringNotContainsString( 'data-copy', $html );
 	}
+
+	public function test_flag_and_script_only_when_there_is_something_to_copy() {
+		$this->mock( 'gist.github.com', 200, $this->fixture( 'json-markdown.json' ) );
+		$html = Embed::render( array( 'id' => 'md1' ) );
+		$this->assertStringContainsString( 'class="gistful"', $html );
+		$this->assertStringNotContainsString( 'data-copy', $html, 'Markdown is shown rendered: nothing to copy.' );
+		$this->assertFalse( wp_script_is( 'gistful-copy', 'enqueued' ) );
+
+		$this->mock( 'gist.github.com', 200, $this->fixture( 'json-csv.json' ) );
+		$this->assertStringContainsString( 'data-copy="1"', Embed::render( array( 'id' => 'csv1' ) ) );
+		$this->assertTrue( wp_script_is( 'gistful-copy', 'enqueued' ) );
+	}
 }

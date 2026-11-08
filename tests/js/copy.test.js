@@ -62,3 +62,14 @@ test( 'clicking copies the code and reports it', async () => {
 	await Promise.resolve();
 	expect( navigator.clipboard.writeText ).toHaveBeenLastCalledWith( 'one\n\ntwo\n' );
 } );
+
+test( 'a rendered CSV file copies as CSV, quoting where needed', () => {
+	mount( `<div class="gistful" data-copy="1"><div class="gist-file"><div class="gist-data" aria-label="data.csv"><table class="csv-data">
+		<thead><tr><td class="blob-num" data-line-number="1"></td><th>id</th><th>name</th></tr></thead>
+		<tbody><tr><td class="blob-num" data-line-number="2"></td><td>1</td><td>Rossi, Mario</td></tr>
+		<tr><td class="blob-num" data-line-number="3"></td><td>2</td><td>say "hi"</td></tr></tbody></table></div></div></div>` );
+	init( document );
+	expect( document.querySelectorAll( 'button.gistful-copy' ) ).toHaveLength( 1 );
+	expect( fileText( document.querySelector( '.gist-file' ) ) ).toBe( 'id,name\n1,"Rossi, Mario"\n2,"say ""hi"""\n' );
+} );
+

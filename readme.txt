@@ -19,7 +19,7 @@ Features:
 * Block editor block, `[gist]` shortcode and pasted gist URLs (oEmbed-style) all supported.
 * Local CSS, no browser requests to GitHub from the plugin's own CSS and scripts. Gists are fetched and cached by your server. The only exception is images inside Markdown gists, which are served by GitHub.
 * Dark mode: follows the visitor's system preference automatically, or force light or dark in the settings.
-* "Copy" button on every file and "Copy all" on multi-file gists: copies exactly the lines shown, without line numbers. Can be turned off in the settings, per block, or with `copy="no"` on the shortcode.
+* "Copy" button on every code and CSV file and "Copy all" on multi-file gists: copies exactly the lines shown, without line numbers (CSV files copy as CSV). Markdown files are shown rendered, so they have no Copy button. Can be turned off in the settings, per block, or with `copy="no"` on the shortcode.
 * Line numbers, line ranges and line highlighting, file selection for multi-file gists, and Markdown and CSV files rendered inline. Files GitHub shows with special viewers (notebooks, maps, 3D models) get a link to GitHub.
 * Migration tool (Tools > Gistful Migration) to convert GistPress content, with a backup so changes can be reverted.
 * Security hardening: gist HTML is sanitized with a strict allow-list, requests go only to GitHub over verified TLS with short timeouts and size limits, and the optional API token is read from a constant and never stored in the database or printed.

@@ -135,7 +135,7 @@ final class Embed {
 			self::register_style();
 			wp_enqueue_style( self::STYLE_HANDLE );
 		}
-		if ( ! $is_link && $attr['copy'] ) {
+		if ( ! $is_link && $attr['copy'] && false !== strpos( $html, 'data-copy="1"' ) ) {
 			self::enqueue_copy_script();
 		}
 

@@ -23,12 +23,50 @@
 	);
 
 	/**
-	 * Code of one file: the text of its code cells, one line each.
+	 * A CSV field, quoted when it contains a separator, a quote or a newline.
+	 *
+	 * @param {string} value Field.
+	 * @return {string} CSV field.
+	 */
+	function csvField( value ) {
+		return /[",\r\n]/.test( value ) ? '"' + value.replace( /"/g, '""' ) + '"' : value;
+	}
+
+	/**
+	 * CSV text of a rendered CSV table: one row per line, line numbers left out.
+	 *
+	 * @param {Element} table A table.csv-data element.
+	 * @return {string} CSV.
+	 */
+	function csvText( table ) {
+		var rows = table.querySelectorAll( 'tr' );
+		var out = [];
+		for ( var i = 0; i < rows.length; i++ ) {
+			var fields = [];
+			var cells = rows[ i ].children;
+			for ( var j = 0; j < cells.length; j++ ) {
+				if ( ! cells[ j ].classList.contains( 'blob-num' ) ) {
+					fields.push( csvField( cells[ j ].textContent.trim() ) );
+				}
+			}
+			out.push( fields.join( ',' ) );
+		}
+		return out.length ? out.join( '\n' ) + '\n' : '';
+	}
+
+	/**
+	 * Text of one file: the code cells, one line each, or the CSV rebuilt from
+	 * its table. Markdown files are shown rendered and their source is not on
+	 * the page, so they have no text to copy.
 	 *
 	 * @param {Element} file A .gist-file element.
-	 * @return {string} Code, or '' when the file has no code cells.
+	 * @return {string} Text, or '' when there is nothing to copy.
 	 */
 	function fileText( file ) {
+		var csv = file.querySelector( 'table.csv-data' );
+		if ( csv ) {
+			return csvText( csv );
+		}
 		var cells = file.querySelectorAll( 'td.blob-code' );
 		var lines = [];
 		for ( var i = 0; i < cells.length; i++ ) {
