@@ -33,6 +33,8 @@ final class Plugin {
 		self::$booted = true;
 
 		add_action( 'init', array( Embed::class, 'register_style' ) );
+		// Priority 20: the 'gistful' style handle (priority 10) must exist first.
+		add_action( 'init', array( Block::class, 'register' ), 20 );
 		Conflicts::register();
 		// Priority 20: after GistPress (default priority), so Gistful takes over.
 		add_action( 'init', array( self::class, 'register_embeds' ), 20 );
