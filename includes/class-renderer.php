@@ -259,7 +259,7 @@ final class Renderer {
 				$classes[] = 'line-highlight';
 				if ( '' !== $color ) {
 					foreach ( $row->getElementsByTagName( 'td' ) as $cell ) {
-						$cell->setAttribute( 'style', 'background-color: ' . $color . ' !important' );
+						$cell->setAttribute( 'style', 'background-color: ' . $color );
 					}
 				}
 			} elseif ( array() !== $highlight ) {

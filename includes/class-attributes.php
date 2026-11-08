@@ -178,7 +178,7 @@ final class Attributes {
 	}
 
 	/**
-	 * Accept only #rgb, #rrggbb or a short alpha-only colour keyword; else default.
+	 * Accept only #rgb, #rrggbb or a else the filtered default (empty by default).
 	 *
 	 * @param mixed $v Value.
 	 * @return string
@@ -189,8 +189,9 @@ final class Attributes {
 			return $v;
 		}
 
-		$default = apply_filters( 'gistful_highlight_color', '#ffc' );
-		$default = is_string( $default ) && preg_match( '/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $default ) ? $default : '#ffc';
+		// Empty means: no inline style, the stylesheet variable decides.
+		$default = apply_filters( 'gistful_highlight_color', '' );
+		$default = is_string( $default ) && preg_match( '/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $default ) ? $default : '';
 
 		return $default;
 	}

@@ -95,6 +95,12 @@ class Test_Renderer extends Gistful_Test_Case {
 		$this->assertStringContainsString( 'line-no-highlight', $out );
 	}
 
+	public function test_default_highlight_emits_no_inline_style() {
+		$out = Renderer::process( Sanitizer::clean( $this->div( 'json-single.json' ) ), Attributes::normalize( array( 'id' => 'a', 'highlight' => '1' ) ) );
+		$this->assertStringContainsString( 'line-highlight', $out );
+		$this->assertStringNotContainsString( 'background-color', $out );
+	}
+
 	public function test_highlight_color_applied_after_sanitize() {
 		$out = Renderer::process( Sanitizer::clean( $this->div( 'json-single.json' ) ), Attributes::normalize( array( 'id' => 'a', 'highlight' => '1', 'highlight_color' => '#123456' ) ) );
 		$this->assertStringContainsString( 'background-color: #123456', $out );

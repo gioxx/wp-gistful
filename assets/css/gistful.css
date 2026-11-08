@@ -39,8 +39,8 @@
 	--gistful-meta-bg: #161b22;
 	--gistful-meta-fg: #8b949e;
 	--gistful-line-num-fg: #6e7681;
-	--gistful-line-highlight: #e8d27a;
-	--gistful-line-highlight-fg: #1f2328;
+	--gistful-line-highlight: #3d3a1c;
+	--gistful-line-highlight-fg: #e6edf3;
 	--gistful-link: #58a6ff;
 	--gistful-pl-c: #8b949e;
 	--gistful-pl-k: #ff7b72;
@@ -61,8 +61,8 @@
 		--gistful-meta-bg: #161b22;
 		--gistful-meta-fg: #8b949e;
 		--gistful-line-num-fg: #6e7681;
-		--gistful-line-highlight: #e8d27a;
-		--gistful-line-highlight-fg: #1f2328;
+		--gistful-line-highlight: #3d3a1c;
+		--gistful-line-highlight-fg: #e6edf3;
 		--gistful-link: #58a6ff;
 		--gistful-pl-c: #8b949e;
 		--gistful-pl-k: #ff7b72;
@@ -157,22 +157,14 @@
 	white-space: pre;
 }
 
-/* Highlighted lines. The renderer also sets an inline background (default #ffc),
- * so the dark scheme keeps the text dark enough to read on it. */
+/* Highlighted lines. An explicit highlight_color attribute adds an inline
+ * background; otherwise this variable decides, per scheme. */
 .gistful .line-highlight td {
 	background-color: var(--gistful-line-highlight);
 }
 
-.gistful[data-scheme="dark"] .line-highlight .blob-code,
-.gistful[data-scheme="dark"] .line-highlight .blob-code [class^="pl-"] {
+.gistful .line-highlight .blob-code {
 	color: var(--gistful-line-highlight-fg);
-}
-
-@media (prefers-color-scheme: dark) {
-	.gistful[data-scheme="auto"] .line-highlight .blob-code,
-	.gistful[data-scheme="auto"] .line-highlight .blob-code [class^="pl-"] {
-		color: var(--gistful-line-highlight-fg);
-	}
 }
 
 .gistful .pl-c {

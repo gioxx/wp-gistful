@@ -18,11 +18,6 @@ class Test_Settings_Page extends Gistful_Test_Case {
 		return (string) file_get_contents( GISTFUL_DIR . 'assets/css/gistful.css' );
 	}
 
-	public function set_up() {
-		parent::set_up();
-		Settings_Page::register();
-	}
-
 	public function test_sanitize_settings() {
 		$clean = Settings_Page::sanitize(
 			array(
