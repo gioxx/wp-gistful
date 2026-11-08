@@ -81,7 +81,8 @@ final class Embed {
 				$is_link = true;
 			} elseif ( $fallback ) {
 				$ttl = Cache::NEGATIVE_TTL;
-			} elseif ( 'api' === $payload->source ) {
+			} elseif ( 'backup' === $payload->source || $payload->is_degraded() ) {
+				// Unhighlighted code, or a backup shown in its place: retry soon.
 				$ttl = Cache::fallback_ttl();
 			}
 
@@ -219,11 +220,21 @@ final class Embed {
 				return $payload;
 			}
 			self::log( "fetched $id via {$payload->source}" );
-			Cache::set( $raw_key, Backup::pack( $payload ), 'api' === $payload->source ? Cache::fallback_ttl() : null );
+			Cache::set( $raw_key, Backup::pack( $payload ), $payload->is_degraded() ? Cache::fallback_ttl() : null );
 		}
 
 		if ( $post_id && self::post_is_certain( $post_id ) ) {
 			Backup::maybe_store( $post_id, $id, $file, $payload );
+		}
+
+		// Prefer a highlighted backup over code that came without highlighting.
+		if ( $post_id && $payload->is_degraded() ) {
+			$backup = Backup::get( $post_id, $id, $file );
+			if ( $backup && ! $backup->is_degraded() ) {
+				self::log( "unhighlighted $id, using backup" );
+
+				return $backup;
+			}
 		}
 
 		return $payload;
