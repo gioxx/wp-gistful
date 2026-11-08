@@ -375,4 +375,47 @@ class Test_Migrator extends Gistful_Test_Case {
 		$this->assertWPError( $res );
 		$this->assertSame( 'gistful_cleanup_stalled', $res->get_error_code() );
 	}
+
+	public function test_convert_refuses_when_keep_limit_would_trim_the_original() {
+		$content = '<!-- wp:shortcode -->[gist id="abc123"]<!-- /wp:shortcode -->';
+		$post    = self::factory()->post->create( array( 'post_content' => $content ) );
+		$keep    = static fn() => 1;
+		add_filter( 'wp_revisions_to_keep', $keep );
+		$res = Migrator::convert( $post );
+		$this->assertWPError( $res );
+		$this->assertSame( 'gistful_no_revision', $res->get_error_code() );
+		$this->assertSame( $content, get_post( $post )->post_content );
+		remove_filter( 'wp_revisions_to_keep', $keep );
+
+		$two = static fn() => 2;
+		add_filter( 'wp_revisions_to_keep', $two );
+		$this->assertTrue( Migrator::convert( $post ) );
+		$orig = array_filter( wp_get_post_revisions( $post ), static fn( $r ) => $r->post_content === $content );
+		$this->assertNotEmpty( $orig, 'original content survives in a revision' );
+	}
+
+	public function test_embed_align_only_wide_or_full() {
+		$embed = static fn( string $align ) => '<!-- wp:embed {"url":"https://gist.github.com/gioxx/abc123","align":"' . $align . '"} -->' . "\n<figure class=\"wp-block-embed\"><div class=\"wp-block-embed__wrapper\">\nhttps://gist.github.com/gioxx/abc123\n</div></figure>\n<!-- /wp:embed -->";
+		$left  = $embed( 'left' );
+		$this->assertSame( $left, Migrator::transform( $left ) );
+		$this->assertStringContainsString( '"align":"full"', Migrator::transform( $embed( 'full' ) ) );
+	}
+
+	public function test_newer_autosave_does_not_block_conversion() {
+		$content = '<!-- wp:shortcode -->[gist id="abc123"]<!-- /wp:shortcode -->';
+		$post    = self::factory()->post->create( array( 'post_content' => $content ) );
+		wp_save_post_revision( $post );
+		$auto = wp_insert_post(
+			array(
+				'post_type'    => 'revision',
+				'post_status'  => 'inherit',
+				'post_parent'  => $post,
+				'post_name'    => $post . '-autosave-v1',
+				'post_content' => 'autosaved different content',
+				'post_date'    => gmdate( 'Y-m-d H:i:s', time() + 60 ),
+			)
+		);
+		$this->assertTrue( wp_is_post_autosave( $auto ) !== false );
+		$this->assertTrue( Migrator::convert( $post ) );
+	}
 }
