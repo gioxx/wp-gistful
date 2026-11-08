@@ -157,10 +157,11 @@ class Test_Settings_Page extends Gistful_Test_Case {
 			ob_start();
 			call_user_func( $page );
 			$html = (string) ob_get_clean();
-			$this->assertStringContainsString( 'class="gistful-footer"', $html );
-			$this->assertStringContainsString( 'Gioxx, ' . gmdate( 'Y' ), $html );
-			$this->assertStringContainsString( 'href="https://go.gioxx.org/gistful"', $html );
+			$this->assertStringContainsString( 'class="gistful-credits"', $html );
+			$this->assertStringContainsString( 'href="https://gioxx.org"', $html );
 			$this->assertStringContainsString( 'href="https://github.com/gioxx/wp-gistful"', $html );
+			$this->assertStringContainsString( 'gistful-trademark-notice', $html );
+			$this->assertStringNotContainsString( 'go.gioxx.org', $html );
 		}
 	}
 }
