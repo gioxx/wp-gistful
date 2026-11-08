@@ -130,4 +130,60 @@ class Test_Conflicts extends Gistful_Test_Case {
 		$this->assertStringContainsString( 'is-dismissible', $html );
 		$this->assertStringContainsString( 'Gistful', $html );
 	}
+
+	private function capture_redirect( string &$location ): void {
+		add_filter(
+			'wp_redirect',
+			static function ( $url ) use ( &$location ) {
+				$location = $url;
+				return false;
+			}
+		);
+	}
+
+	private function prepare_post(): void {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$_REQUEST['_wpnonce']    = wp_create_nonce( 'gistful_deactivate_gistpress' );
+		$_POST['_wpnonce']       = $_REQUEST['_wpnonce'];
+		$_SERVER['HTTP_REFERER'] = admin_url( 'plugins.php' );
+	}
+
+	public function test_gistpress_in_renamed_folder_is_resolved_and_deactivated() {
+		$this->prepare_post();
+		update_option( 'active_plugins', array( 'gistpress-master/gistpress.php' ) );
+		$this->assertSame( 'gistpress-master/gistpress.php', Conflicts::gistpress_file() );
+		$location = '';
+		$this->capture_redirect( $location );
+		Conflicts::handle_deactivate();
+		$this->assertSame( array(), array_values( get_option( 'active_plugins' ) ) );
+		$this->assertStringContainsString( 'gistpress_deactivated', $location );
+	}
+
+	public function test_failed_deactivation_shows_failure_notice() {
+		$this->prepare_post();
+		update_option( 'active_plugins', array( 'gistpress/gistpress.php' ) );
+		// Force the plugin to remain active.
+		add_filter( 'pre_update_option_active_plugins', static fn( $new, $old ) => $old, 10, 2 );
+		$location = '';
+		$this->capture_redirect( $location );
+		Conflicts::handle_deactivate();
+		$this->assertStringContainsString( 'gistpress_deactivate_failed', $location );
+
+		$_GET['gistful_notice'] = 'gistpress_deactivate_failed';
+		ob_start();
+		Conflicts::render_notice();
+		$this->assertStringContainsString( 'notice-error', ob_get_clean() );
+	}
+
+	public function test_deactivation_mode_decision() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->assertSame( 'site', Conflicts::deactivation_mode( 'gistpress/gistpress.php' ) );
+		if ( ! is_multisite() ) {
+			return; // Network-active branches only run with WP_TESTS_MULTISITE.
+		}
+		update_site_option( 'active_sitewide_plugins', array( 'gistpress/gistpress.php' => time() ) );
+		$this->assertSame( 'denied', Conflicts::deactivation_mode( 'gistpress/gistpress.php' ) );
+		grant_super_admin( get_current_user_id() );
+		$this->assertSame( 'network', Conflicts::deactivation_mode( 'gistpress/gistpress.php' ) );
+	}
 }

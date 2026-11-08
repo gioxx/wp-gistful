@@ -67,7 +67,7 @@ final class Conflicts {
 			$found[] = array(
 				'slug'        => 'gistpress',
 				'name'        => 'GistPress',
-				'plugin_file' => self::GISTPRESS_ID,
+				'plugin_file' => self::gistpress_file(),
 			);
 		}
 		if ( class_exists( 'Jetpack' ) && method_exists( 'Jetpack', 'is_module_active' ) && \Jetpack::is_module_active( 'shortcodes' ) ) {
@@ -86,6 +86,49 @@ final class Conflicts {
 		}
 
 		return $found;
+	}
+
+	/**
+	 * Network-activated plugin files (multisite only).
+	 *
+	 * @return string[]
+	 */
+	private static function network_plugins(): array {
+		if ( ! is_multisite() ) {
+			return array();
+		}
+
+		return array_map( 'strval', array_keys( (array) get_site_option( 'active_sitewide_plugins', array() ) ) );
+	}
+
+	/**
+	 * Actual plugin file of the active GistPress (folder name may differ).
+	 *
+	 * @return string
+	 */
+	public static function gistpress_file(): string {
+		$active = array_merge( (array) get_option( 'active_plugins', array() ), self::network_plugins() );
+		foreach ( $active as $file ) {
+			if ( 'gistpress.php' === basename( (string) $file ) ) {
+				return (string) $file;
+			}
+		}
+
+		return self::GISTPRESS_ID;
+	}
+
+	/**
+	 * Who may deactivate GistPress and how: 'site', 'network' or 'denied'.
+	 *
+	 * @param string $file Plugin file.
+	 * @return string
+	 */
+	public static function deactivation_mode( string $file ): string {
+		if ( ! in_array( $file, self::network_plugins(), true ) ) {
+			return 'site';
+		}
+
+		return current_user_can( 'manage_network_plugins' ) ? 'network' : 'denied';
 	}
 
 	/**
@@ -131,6 +174,10 @@ final class Conflicts {
 			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'GistPress has been deactivated. Gistful now handles your gists.', 'gistful' ) . '</p></div>';
 		}
 
+		if ( 'gistpress_deactivate_failed' === $flag ) {
+			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'GistPress could not be deactivated. Please deactivate it from the Plugins screen.', 'gistful' ) . '</p></div>';
+		}
+
 		if ( ! self::on_notice_screen() ) {
 			return;
 		}
@@ -144,7 +191,9 @@ final class Conflicts {
 				)
 			);
 			echo '</p>';
-			if ( 'gistpress' === $conflict['slug'] ) {
+			if ( 'gistpress' === $conflict['slug'] && 'denied' === self::deactivation_mode( (string) $conflict['plugin_file'] ) ) {
+				echo '<p>' . esc_html__( 'GistPress is network-activated; ask a network administrator to deactivate it.', 'gistful' ) . '</p>';
+			} elseif ( 'gistpress' === $conflict['slug'] ) {
 				echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 				echo '<input type="hidden" name="action" value="' . esc_attr( self::ACTION ) . '">';
 				wp_nonce_field( self::ACTION );
@@ -169,12 +218,18 @@ final class Conflicts {
 		if ( ! function_exists( 'deactivate_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
-		deactivate_plugins( self::GISTPRESS_ID );
+		$file = self::gistpress_file();
+		$mode = self::deactivation_mode( $file );
+		if ( 'denied' === $mode ) {
+			wp_die( esc_html__( 'GistPress is network-activated; ask a network administrator to deactivate it.', 'gistful' ), '', array( 'response' => 403 ) );
+		}
+		deactivate_plugins( $file, false, 'network' === $mode );
+		$result = is_plugin_active( $file ) ? 'gistpress_deactivate_failed' : 'gistpress_deactivated';
 
 		$back = wp_get_referer();
 		$back = $back ? remove_query_arg( 'gistful_notice', $back ) : admin_url( 'plugins.php' );
 		// wp_safe_redirect() returns false when a wp_redirect filter cancels it (tests).
-		if ( wp_safe_redirect( add_query_arg( 'gistful_notice', 'gistpress_deactivated', $back ) ) ) {
+		if ( wp_safe_redirect( add_query_arg( 'gistful_notice', $result, $back ) ) ) {
 			exit;
 		}
 	}
