@@ -4,7 +4,7 @@ Tags: gist, github, embed, code, syntax highlighting
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.1.0
+Stable tag: 0.2.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -70,10 +70,18 @@ There are three cases:
 
 == Changelog ==
 
+= 0.2.0 =
+* New: "Copy" button on every code and CSV file and "Copy all" on multi-file gists (opt out in the settings, per block or with `copy="no"`).
+* Fix: a gist that GitHub occasionally serves without syntax highlighting is cached for at most an hour and never replaces a highlighted backup of the same code.
+* Plugins screen: "View on GitHub" and "More plugins by Gioxx" links.
+
 = 0.1.0 =
 * Initial release: block, shortcode and URL embeds, local CSS, dark mode, GistPress migration tool, security hardening, WP-CLI cache command.
 
 == Upgrade Notice ==
+
+= 0.2.0 =
+Copy buttons on gists, and syntax colours no longer go missing for hours when GitHub serves a gist without highlighting.
 
 = 0.1.0 =
 Initial release.

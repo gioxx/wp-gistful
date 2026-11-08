@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 - 2026-11-08
 
 - Copy buttons: "Copy" on every code and CSV file and "Copy all" on gists with more than one such file. They copy exactly the lines shown (no line numbers; CSV files copy as CSV rebuilt from the table; Markdown, shown rendered, has no button), announce the result to screen readers and fall back to the legacy copy command on sites without HTTPS. A small deferred script, served from the site, loads only on pages that show a gist with something to copy; without JavaScript nothing changes. Opt out globally (Settings > Gistful), per block (Display panel) or with `copy="no"` on the shortcode.
 - Fix: GitHub occasionally serves a gist without syntax highlighting, and that copy was cached for the full TTL (and could replace the highlighted backup), so code showed without colours until the cache was cleared. Such a response (even a one-line snippet) is now treated like the API fallback: cached for at most one hour, never stored over a highlighted backup of the same code, and replaced by that backup when the post has one. Copies are compared by their code, so an edited gist always shows its current code and updates the backup.
