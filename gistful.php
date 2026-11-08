@@ -29,3 +29,7 @@ require_once GISTFUL_DIR . 'includes/class-autoloader.php';
 Autoloader::register( GISTFUL_DIR . 'includes/' );
 
 add_action( 'plugins_loaded', array( Plugin::class, 'boot' ) );
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	\WP_CLI::add_command( 'gistful cache', Cli\Command::class );
+}
