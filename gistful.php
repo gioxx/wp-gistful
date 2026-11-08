@@ -8,8 +8,8 @@
  * Requires PHP:      8.1
  * Author:            Gioxx
  * Author URI:        https://gioxx.org
- * License:           GPL-2.0-or-later
- * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * License:           GPL-3.0-or-later
+ * License URI:       https://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain:       gistful
  *
  * Based on GistPress by Brady Vercher and Gary Jones.

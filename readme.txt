@@ -5,8 +5,8 @@ Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.1
 Stable tag: 0.1.0
-License: GPLv2 or later
-License URI: https://www.gnu.org/licenses/gpl-2.0.html
+License: GPLv3 or later
+License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
 Embed GitHub Gists with a block, the [gist] shortcode or a pasted URL. A modern, drop-in replacement for GistPress.
 
