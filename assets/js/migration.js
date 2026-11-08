@@ -63,13 +63,26 @@
 	}
 
 	/* Import / cleanup: show numbers, ask for a second click, then batch with stop/resume. */
-	function renderBatchStep( key, askText, hasWork ) {
+	function importDone() {
+		var st = ( scanData.state || {} ).import;
+		return scanData.legacy_meta === 0 || ( !! st && null === st.next );
+	}
+
+	function renderBatchStep( key, askText, hasWork, forced ) {
 		var box = document.getElementById( 'gistful-' + key );
+		var force = !! forced;
 		clear( box );
 		var state = ( scanData.state || {} )[ key ];
 		var resumeAt = state && null !== state.next && undefined !== state.next ? state.next : null;
 		if ( ! hasWork && null === resumeAt ) {
 			box.appendChild( el( 'p', t.nothing ) );
+			return;
+		}
+		if ( 'cleanup' === key && ! force && ! importDone() ) {
+			box.appendChild( el( 'p', t.importPending ) );
+			box.appendChild( btn( t.cleanupAnyway, function () {
+				renderBatchStep( key, askText, hasWork, true );
+			} ) );
 			return;
 		}
 		box.appendChild( el( 'p', askText ) );
@@ -102,7 +115,7 @@
 
 		function post( offset ) {
 			return window.wp.apiFetch( {
-				path: '/' + cfg.base + '/' + key + '?offset=' + offset + '&limit=50',
+				path: '/' + cfg.base + '/' + key + '?offset=' + offset + '&limit=50' + ( force ? '&force=1' : '' ),
 				method: 'POST',
 			} );
 		}
@@ -114,6 +127,11 @@
 				if ( null === r.next || undefined === r.next ) {
 					status.textContent = t.done;
 					clear( actions );
+					if ( 'import' === key ) {
+						scanData.state = scanData.state || {};
+						scanData.state.import = { next: null };
+						renderCleanupStep();
+					}
 					return;
 				}
 				if ( stopFlags[ key ] ) {
@@ -168,7 +186,7 @@
 			var status = el( 'p', '', { 'aria-live': 'polite' } );
 			var actions = el( 'p' );
 			actions.appendChild( btn( t.convertConfirm, function () {
-				api( 'convert/' + id, 'POST' ).then( function ( r ) {
+				api( 'convert/' + id + '?hash=' + encodeURIComponent( p.hash ), 'POST' ).then( function ( r ) {
 					clear( detail );
 					detail.appendChild( el( 'p', r.converted ? t.converted : t.unchanged ) );
 				}, function ( e ) {
@@ -185,13 +203,17 @@
 		} );
 	}
 
-	function renderSteps() {
-		renderBatchStep( 'import', fmt( t.importAsk, scanData.legacy_meta ), scanData.legacy_meta > 0 );
+	function renderCleanupStep() {
 		renderBatchStep(
 			'cleanup',
 			fmt( t.cleanupAsk, scanData.legacy_meta, scanData.legacy_transients ),
 			scanData.legacy_meta > 0 || scanData.legacy_transients > 0 || scanData.legacy_option
 		);
+	}
+
+	function renderSteps() {
+		renderBatchStep( 'import', fmt( t.importAsk, scanData.legacy_meta ), scanData.legacy_meta > 0 );
+		renderCleanupStep();
 		renderConvert();
 	}
 

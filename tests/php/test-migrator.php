@@ -120,7 +120,8 @@ class Test_Migrator extends Gistful_Test_Case {
 		update_post_meta( $p1, Backup::meta_key( 'abc111', '' ), $existing );
 		$r = Migrator::import_backups( 0, 50 );
 		$this->assertSame( 5, $r['processed'] );
-		$this->assertSame( 1, $r['skipped'] );
+		$this->assertSame( 2, $r['skipped'], 'one unmatched row, one existing backup' );
+		$this->assertSame( 3, $r['imported'] );
 		$this->assertSame( $existing, get_post_meta( $p1, Backup::meta_key( 'abc111', '' ), true ) );
 	}
 
@@ -137,7 +138,7 @@ class Test_Migrator extends Gistful_Test_Case {
 		$posts = $this->seed_gistpress_data();
 		update_post_meta( $posts[0], 'XgistXrawX', 'keep' );
 		update_post_meta( $posts[0], 'xgist_raw_keep', 'keep' );
-		$r = Migrator::cleanup( 0, 500 );
+		$r = Migrator::cleanup( 0, 500, true );
 		$this->assertNull( $r['next'] );
 		$this->assertSame( 1, (int) get_option( 'gistXhtml_keep' ) );
 		$this->assertSame( 1, (int) get_option( '_transient_gistXhtml_keep' ) );
@@ -150,10 +151,10 @@ class Test_Migrator extends Gistful_Test_Case {
 
 	public function test_cleanup_batches() {
 		$this->seed_gistpress_data();
-		$r = Migrator::cleanup( 0, 2 );
+		$r = Migrator::cleanup( 0, 2, true );
 		$this->assertNotNull( $r['next'] );
 		$this->assertSame( 2, $this->count_meta_like( '_gist_raw_' ) );
-		$r = Migrator::cleanup( (int) $r['next'], 2 );
+		$r = Migrator::cleanup( (int) $r['next'], 2, true );
 		$this->assertNull( $r['next'] );
 		$this->assertSame( 0, $this->count_meta_like( '_gist_raw_' ) );
 	}
@@ -211,7 +212,9 @@ class Test_Migrator extends Gistful_Test_Case {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
 		foreach ( array( 'GET /gistful/v1/migration/scan', 'POST /gistful/v1/migration/import', 'POST /gistful/v1/migration/cleanup', 'GET /gistful/v1/migration/preview/1', 'POST /gistful/v1/migration/convert/1' ) as $route ) {
 			list( $method, $path ) = explode( ' ', $route );
-			$this->assertSame( 403, rest_do_request( new WP_REST_Request( $method, $path ) )->get_status(), $route );
+			$req = new WP_REST_Request( $method, $path );
+			$req->set_param( 'hash', md5( 'x' ) );
+			$this->assertSame( 403, rest_do_request( $req )->get_status(), $route );
 		}
 		wp_set_current_user( 0 );
 		$this->assertSame( 401, rest_do_request( new WP_REST_Request( 'GET', '/gistful/v1/migration/scan' ) )->get_status() );
@@ -256,8 +259,120 @@ class Test_Migrator extends Gistful_Test_Case {
 		$res  = rest_do_request( new WP_REST_Request( 'GET', "/gistful/v1/migration/preview/$post" ) );
 		$this->assertStringContainsString( 'wp:gistful/gist', $res->get_data()['after'] );
 		$this->assertSame( 404, rest_do_request( new WP_REST_Request( 'GET', '/gistful/v1/migration/preview/999999' ) )->get_status() );
-		$res = rest_do_request( new WP_REST_Request( 'POST', "/gistful/v1/migration/convert/$post" ) );
+		$req = new WP_REST_Request( 'POST', "/gistful/v1/migration/convert/$post" );
+		$this->assertSame( 400, rest_do_request( $req )->get_status(), 'hash is required' );
+		$req->set_param( 'hash', $res->get_data()['hash'] );
+		$res = rest_do_request( $req );
 		$this->assertTrue( $res->get_data()['converted'] );
 		$this->assertNotContains( $post, Migrator::convertible_ids(), 'converted post is no longer convertible' );
+	}
+
+	public function test_convert_requires_a_revision_of_the_current_content() {
+		$content = '<!-- wp:shortcode -->[gist id="abc123"]<!-- /wp:shortcode -->';
+		$post    = self::factory()->post->create( array( 'post_content' => $content ) );
+		add_filter( 'wp_revisions_to_keep', '__return_zero' );
+		$res = Migrator::convert( $post );
+		$this->assertWPError( $res );
+		$this->assertSame( 'gistful_no_revision', $res->get_error_code() );
+		$this->assertSame( $content, get_post( $post )->post_content );
+		remove_filter( 'wp_revisions_to_keep', '__return_zero' );
+		$this->assertTrue( Migrator::convert( $post ) );
+	}
+
+	public function test_convert_rejects_changed_content_hash() {
+		$post = self::factory()->post->create( array( 'post_content' => '<!-- wp:shortcode -->[gist id="abc123"]<!-- /wp:shortcode -->' ) );
+		$hash = Migrator::preview_conversion( $post )['hash'];
+		wp_update_post(
+			array(
+				'ID'           => $post,
+				'post_content' => '<!-- wp:shortcode -->[gist id="zzz999"]<!-- /wp:shortcode -->',
+			)
+		);
+		$res = Migrator::convert( $post, $hash );
+		$this->assertWPError( $res );
+		$this->assertSame( 'gistful_content_changed', $res->get_error_code() );
+		$this->assertStringContainsString( 'wp:shortcode', get_post( $post )->post_content );
+	}
+
+	public function test_backslashes_survive_import_and_backup_get() {
+		$p1  = self::factory()->post->create( array( 'post_content' => '[gist id="abc111"]' ) );
+		$div = '<div class="gist"><div class="gist-file"><table class="highlight"><tr><td class="blob-code blob-code-inner js-file-line">printf("a\\nb"); C:\\path</td></tr></table></div></div>';
+		$key = Migrator::legacy_key( 'abc111', '' );
+		update_post_meta( $p1, $key, addslashes( $div ) ); // As GistPress did.
+		$this->assertSame( $div, get_post_meta( $p1, $key, true ) );
+		$this->assertSame( $div, Backup::get( $p1, 'abc111', '' )->html, 'legacy fallback is byte-for-byte' );
+		Migrator::import_backups( 0, 50 );
+		$html = Backup::get( $p1, 'abc111', '' )->html;
+		$this->assertStringContainsString( 'printf("a\\nb"); C:\\path', str_replace( '&quot;', '"', $html ) );
+		$this->assertSame( 'backup', Backup::get( $p1, 'abc111', '' )->source );
+	}
+
+	public function test_embed_with_caption_or_unknown_attrs_is_not_converted_and_class_align_carry_over() {
+		$embed = static fn( string $attrs, string $caption = '' ) => "<!-- wp:embed $attrs -->\n<figure class=\"wp-block-embed\"><div class=\"wp-block-embed__wrapper\">\nhttps://gist.github.com/gioxx/abc123\n</div>$caption</figure>\n<!-- /wp:embed -->";
+		$url   = '"url":"https://gist.github.com/gioxx/abc123"';
+		$cap   = '<figcaption class="wp-element-caption">My gist</figcaption>';
+
+		$captioned = $embed( "{" . $url . "}", $cap );
+		$this->assertSame( $captioned, Migrator::transform( $captioned ) );
+		$odd = $embed( '{' . $url . ',"allowResponsive":false}' );
+		$this->assertSame( $odd, Migrator::transform( $odd ) );
+
+		$ok = Migrator::transform( $embed( '{' . $url . ',"className":"my-class","align":"wide","providerNameSlug":"embed-handler"}', '<figcaption class="wp-element-caption"></figcaption>' ) );
+		$this->assertStringContainsString( '<!-- wp:gistful/gist {"url":"https://gist.github.com/gioxx/abc123","className":"my-class","align":"wide"} /-->', $ok );
+	}
+
+	public function test_convertible_list_reaches_posts_beyond_the_first_chunk() {
+		add_filter( 'gistful_migration_convert_limit', static fn() => 2 );
+		$skip = '<!-- wp:shortcode -->[gist id="a1"] trailing text<!-- /wp:shortcode -->';
+		for ( $i = 0; $i < 3; $i++ ) {
+			self::factory()->post->create( array( 'post_content' => $skip ) );
+		}
+		$late = self::factory()->post->create( array( 'post_content' => '<!-- wp:shortcode -->[gist id="abc123"]<!-- /wp:shortcode -->' ) );
+		$this->assertSame( array( $late ), Migrator::convertible_ids() );
+	}
+
+	public function test_void_embed_block_maps_legacy_key() {
+		$p1 = self::factory()->post->create( array( 'post_content' => '<!-- wp:embed {"url":"https://gist.github.com/gioxx/abc777"} /-->' ) );
+		add_post_meta( $p1, Migrator::legacy_key( 'abc777', '' ), wp_slash( $this->legacy_html() ) );
+		$r = Migrator::import_backups( 0, 50 );
+		$this->assertSame( 1, $r['imported'] );
+		$this->assertSame( 0, $r['skipped'] );
+	}
+
+	public function test_cleanup_requires_finished_import_unless_forced() {
+		$this->seed_gistpress_data();
+		$res = Migrator::cleanup( 0, 500 );
+		$this->assertWPError( $res );
+		$this->assertSame( 'gistful_import_pending', $res->get_error_code() );
+		$this->assertSame( 4, $this->count_meta_like( '_gist_raw_' ) );
+
+		$req = new WP_REST_Request( 'POST', '/gistful/v1/migration/cleanup' );
+		$this->assertSame( 409, rest_do_request( $req )->get_status() );
+
+		rest_do_request( new WP_REST_Request( 'POST', '/gistful/v1/migration/import' ) ); // Whole import in one batch.
+		$this->assertSame( 200, rest_do_request( new WP_REST_Request( 'POST', '/gistful/v1/migration/cleanup' ) )->get_status() );
+		$this->assertSame( 0, $this->count_meta_like( '_gist_raw_' ) );
+	}
+
+	public function test_cleanup_force_flag_over_rest() {
+		$this->seed_gistpress_data();
+		$req = new WP_REST_Request( 'POST', '/gistful/v1/migration/cleanup' );
+		$req->set_param( 'force', true );
+		$this->assertSame( 200, rest_do_request( $req )->get_status() );
+	}
+
+	public function test_cleanup_stall_is_an_error_not_a_loop() {
+		global $wpdb;
+		$post = self::factory()->post->create( array( 'post_content' => '[gist id="abc111"]' ) );
+		add_post_meta( $post, Migrator::legacy_key( 'abc111', '' ), 'x' );
+		add_filter(
+			'query',
+			static function ( $sql ) use ( $wpdb ) {
+				return 0 === strpos( $sql, "DELETE FROM `{$wpdb->postmeta}`" ) ? $sql . ' AND 1=0' : $sql;
+			}
+		);
+		$res = Migrator::cleanup( 0, 50, true );
+		$this->assertWPError( $res );
+		$this->assertSame( 'gistful_cleanup_stalled', $res->get_error_code() );
 	}
 }

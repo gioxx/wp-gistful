@@ -57,13 +57,28 @@ final class Migration_Controller {
 				'validate_callback' => 'rest_validate_request_arg',
 			),
 		);
+		$clean = $batch + array(
+			'force' => array(
+				'type'              => 'boolean',
+				'default'           => false,
+				'validate_callback' => 'rest_validate_request_arg',
+			),
+		);
+		$conv  = $id + array(
+			'hash' => array(
+				'type'              => 'string',
+				'required'          => true,
+				'pattern'           => '^[a-f0-9]{32}$',
+				'validate_callback' => 'rest_validate_request_arg',
+			),
+		);
 
 		$routes = array(
 			'/migration/scan'                => array( 'GET', 'scan', array() ),
 			'/migration/import'              => array( 'POST', 'import', $batch ),
 			'/migration/cleanup'             => array( 'POST', 'cleanup', $batch ),
 			'/migration/preview/(?P<id>\d+)' => array( 'GET', 'preview', $id ),
-			'/migration/convert/(?P<id>\d+)' => array( 'POST', 'convert', $id ),
+			'/migration/convert/(?P<id>\d+)' => array( 'POST', 'convert', $conv ),
 		);
 		foreach ( $routes as $route => list( $method, $callback, $args ) ) {
 			register_rest_route(
@@ -145,7 +160,7 @@ final class Migration_Controller {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public static function cleanup( \WP_REST_Request $request ) {
-		$result = Migrator::cleanup( (int) $request['offset'], (int) $request['limit'] );
+		$result = Migrator::cleanup( (int) $request['offset'], (int) $request['limit'], rest_sanitize_boolean( $request['force'] ) );
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
@@ -200,6 +215,11 @@ final class Migration_Controller {
 			return $error;
 		}
 
-		return new \WP_REST_Response( array( 'converted' => Migrator::convert( $post_id ) ) );
+		$result = Migrator::convert( $post_id, (string) $request['hash'] );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return new \WP_REST_Response( array( 'converted' => $result ) );
 	}
 }
