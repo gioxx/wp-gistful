@@ -157,15 +157,15 @@ class Test_Settings_Page extends Gistful_Test_Case {
 			ob_start();
 			call_user_func( $page );
 			$html = (string) ob_get_clean();
-			$this->assertStringContainsString( 'class="gistful-credits"', $html );
+			$this->assertStringContainsString( 'class="gistful-footer"', $html );
+			$this->assertStringContainsString( 'src="' . GISTFUL_URL . 'assets/images/gistful-icon.svg"', $html );
 			$this->assertStringContainsString( 'href="https://gioxx.org"', $html );
 			$this->assertStringContainsString( 'href="https://github.com/gioxx/wp-gistful"', $html );
 			$this->assertStringContainsString( 'gistful-trademark-notice', $html );
 			$this->assertStringNotContainsString( 'go.gioxx.org', $html );
 			$this->assertStringNotContainsString( 'style=', $html, 'Styles belong in admin.css.' );
-			$this->assertStringContainsString( 'class="gistful-more-plugins"', $html );
 			$this->assertStringContainsString( 'href="https://wordpress.gioxx.org/"', $html );
-			$this->assertStringContainsString( 'src="' . GISTFUL_URL . 'assets/images/gioxx-wordpress.svg"', $html );
+			$this->assertStringContainsString( 'src="' . GISTFUL_URL . 'assets/images/gioxx-plugins.svg"', $html );
 		}
 	}
 
@@ -178,6 +178,6 @@ class Test_Settings_Page extends Gistful_Test_Case {
 			$this->assertTrue( wp_style_is( 'gistful-admin', 'enqueued' ), $hook );
 		}
 		$this->assertFileExists( GISTFUL_DIR . 'assets/css/admin.css' );
-		$this->assertFileExists( GISTFUL_DIR . 'assets/images/gioxx-wordpress.svg' );
+		$this->assertFileExists( GISTFUL_DIR . 'assets/images/gioxx-plugins.svg' );
 	}
 }

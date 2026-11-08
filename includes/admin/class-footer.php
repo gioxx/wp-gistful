@@ -57,35 +57,56 @@ final class Footer {
 	}
 
 	/**
-	 * Print the gallery invitation and the credits.
+	 * Print the plugin card and the gallery invitation side by side, then the
+	 * trademark notice.
 	 *
 	 * @return void
 	 */
 	public static function render(): void {
+		$images = GISTFUL_URL . 'assets/images/';
 		?>
-		<div class="gistful-more-plugins">
-			<img class="gistful-more-plugins__logo" src="<?php echo esc_url( GISTFUL_URL . 'assets/images/gioxx-wordpress.svg' ); ?>" width="48" height="48" alt="">
-			<div class="gistful-more-plugins__body">
-				<p class="gistful-more-plugins__eyebrow">gioxx/WordPress</p>
-				<h2 class="gistful-more-plugins__title"><?php esc_html_e( 'Discover more plugins by Gioxx', 'gistful' ); ?></h2>
-				<p class="gistful-more-plugins__text"><?php esc_html_e( 'A curated collection of open-source plugins for security, analytics, performance and integrations.', 'gistful' ); ?></p>
+		<div class="gistful-footer">
+			<div class="gistful-footer__cards">
+				<div class="gistful-footer__card gistful-footer__card--plugin">
+					<span class="gistful-footer__badge"><img src="<?php echo esc_url( $images . 'gistful-icon.svg' ); ?>" width="20" height="20" alt=""></span>
+					<div class="gistful-footer__body">
+						<p class="gistful-footer__eyebrow">
+							<?php
+							/* translators: %s: plugin version number */
+							printf( esc_html__( 'Version %s', 'gistful' ), esc_html( GISTFUL_VERSION ) );
+							?>
+						</p>
+						<h2 class="gistful-footer__title">Gistful for GitHub</h2>
+						<p class="gistful-footer__text"><?php esc_html_e( 'GitHub Gists in your posts: cached, sanitized, with dark mode and a block.', 'gistful' ); ?></p>
+						<p class="gistful-footer__text">
+							<?php
+							printf(
+								/* translators: 1: link to the author's site, 2: link to the plugin repository */
+								esc_html__( 'Made by %1$s. Source code on %2$s.', 'gistful' ),
+								'<a href="' . esc_url( self::AUTHOR_URL ) . '" target="_blank" rel="noopener noreferrer">Gioxx</a>',
+								'<a href="' . esc_url( self::GITHUB_URL ) . '" target="_blank" rel="noopener noreferrer">GitHub</a>'
+							);
+							?>
+						</p>
+						<a class="button gistful-footer__action" href="<?php echo esc_url( self::GITHUB_URL ); ?>" target="_blank" rel="noopener noreferrer">
+							<?php esc_html_e( 'View on GitHub', 'gistful' ); ?>
+							<span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'gistful' ); ?></span>
+						</a>
+					</div>
+				</div>
+				<div class="gistful-footer__card gistful-footer__card--gallery">
+					<img class="gistful-footer__logo" src="<?php echo esc_url( $images . 'gioxx-plugins.svg' ); ?>" width="40" height="40" alt="">
+					<div class="gistful-footer__body">
+						<p class="gistful-footer__eyebrow">gioxx/WordPress</p>
+						<h2 class="gistful-footer__title"><?php esc_html_e( 'Discover more plugins by Gioxx', 'gistful' ); ?></h2>
+						<p class="gistful-footer__text"><?php esc_html_e( 'A curated collection of open-source plugins for security, analytics, performance and integrations.', 'gistful' ); ?></p>
+						<a class="button gistful-footer__action" href="<?php echo esc_url( self::GALLERY_URL ); ?>" target="_blank" rel="noopener noreferrer">
+							<?php esc_html_e( 'Browse the plugins', 'gistful' ); ?>
+							<span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'gistful' ); ?></span>
+						</a>
+					</div>
+				</div>
 			</div>
-			<a class="button gistful-more-plugins__action" href="<?php echo esc_url( self::GALLERY_URL ); ?>" target="_blank" rel="noopener noreferrer">
-				<?php esc_html_e( 'Browse the plugins', 'gistful' ); ?>
-				<span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'gistful' ); ?></span>
-			</a>
-		</div>
-		<div class="gistful-credits">
-			<p class="description">
-				<?php
-				printf(
-					/* translators: 1: link to the author's site, 2: link to the plugin repository */
-					esc_html__( 'Gistful for GitHub by %1$s, source on %2$s.', 'gistful' ),
-					'<a href="' . esc_url( self::AUTHOR_URL ) . '" target="_blank" rel="noopener noreferrer">Gioxx</a>',
-					'<a href="' . esc_url( self::GITHUB_URL ) . '" target="_blank" rel="noopener noreferrer">GitHub</a>'
-				);
-				?>
-			</p>
 			<p class="description gistful-trademark-notice">
 				<?php esc_html_e( 'All trademarks mentioned are the property of their respective owners. Third-party trademarks, product names, trade names, corporate names and companies mentioned may be trademarks of their respective owners or registered trademarks of other companies and have been used for explanatory purposes only and for the benefit of the owner, without any intent to infringe existing copyright.', 'gistful' ); ?>
 			</p>
