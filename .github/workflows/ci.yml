@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: PHPCS
@@ -47,3 +50,18 @@ jobs:
         env:
           WP_MULTISITE: '1'
         run: composer test -- --filter Test_Uninstall
+
+  plugin-check:
+    name: Plugin Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Build package
+        run: bin/package.sh
+      - uses: wordpress/plugin-check-action@v1
+        with:
+          build-dir: dist/gistful
