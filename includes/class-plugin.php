@@ -41,6 +41,8 @@ final class Plugin {
 		add_action( 'save_post', array( Prefetch::class, 'on_save' ), 10, 2 );
 		Legacy_Hooks::register();
 		Admin\Settings_Page::register();
+		Admin\Migration_Controller::register();
+		Admin\Migration_Page::register();
 	}
 
 	/**
