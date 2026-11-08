@@ -1,30 +1,59 @@
 /* Gistful admin pages: Settings > Gistful and Tools > Gistful Migration. */
 
-.gistful-more-plugins {
-	display: flex;
-	align-items: center;
-	gap: 16px;
-	max-width: 600px;
-	box-sizing: border-box;
+.gistful-footer {
+	max-width: 960px;
 	margin-top: 32px;
-	padding: 16px 20px;
+	padding-top: 24px;
+	border-top: 1px solid #dcdcde;
+}
+
+.gistful-footer__cards {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16px;
+}
+
+.gistful-footer__card {
+	display: flex;
+	align-items: stretch;
+	gap: 14px;
+	box-sizing: border-box;
+	padding: 18px 20px;
 	background: #fff;
 	border: 1px solid #dcdcde;
 	border-radius: 8px;
 }
 
-.gistful-more-plugins__logo {
+.gistful-footer__badge {
+	display: flex;
 	flex: 0 0 auto;
-	width: 48px;
-	height: 48px;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	background: rgba(41, 94, 227, 0.1);
 }
 
-.gistful-more-plugins__body {
+.gistful-footer__logo {
+	flex: 0 0 auto;
+	width: 40px;
+	height: 40px;
+}
+
+.gistful-footer__body {
+	display: flex;
 	flex: 1 1 auto;
+	flex-direction: column;
 	min-width: 0;
 }
 
-.gistful-more-plugins__eyebrow {
+.gistful-footer__badge,
+.gistful-footer__logo {
+	align-self: flex-start;
+}
+
+.gistful-footer__eyebrow {
 	margin: 0 0 2px;
 	color: #295ee3;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -33,49 +62,42 @@
 	text-transform: uppercase;
 }
 
-.gistful-more-plugins__title {
+.gistful-footer__title {
 	margin: 0 0 4px;
 	padding: 0;
 	font-size: 14px;
 	font-weight: 600;
 }
 
-.gistful-more-plugins__text {
+.gistful-footer__text {
 	margin: 0;
 	color: #646970;
 }
 
-.gistful-more-plugins__action {
-	flex: 0 0 auto;
+.gistful-footer__text + .gistful-footer__text {
+	margin-top: 4px;
 }
 
-@media screen and (max-width: 600px) {
-	.gistful-more-plugins {
-		flex-wrap: wrap;
-	}
-
-	.gistful-more-plugins__action {
-		flex-basis: 100%;
-		text-align: center;
-	}
+.gistful-footer__action {
+	align-self: flex-start;
+	margin-top: auto !important;
 }
 
-.gistful-credits {
-	max-width: 600px;
-	margin-top: 24px;
-	padding-top: 16px;
-	border-top: 1px solid #dcdcde;
+.gistful-footer__text:last-of-type {
+	margin-bottom: 12px;
 }
 
-.gistful-credits .description {
-	margin: 0 0 6px;
+.gistful-footer .gistful-trademark-notice {
+	margin: 16px 0 0;
 	color: #646970;
-}
-
-.gistful-credits .gistful-trademark-notice {
-	margin-bottom: 0;
 	font-size: 11px;
 	line-height: 1.5;
+}
+
+@media screen and (max-width: 782px) {
+	.gistful-footer__cards {
+		grid-template-columns: minmax(0, 1fr);
+	}
 }
 
 .gistful-status {

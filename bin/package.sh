@@ -27,7 +27,7 @@ for path in "${forbidden[@]}"; do
 done
 [ "$bad" -eq 0 ] || exit 1
 
-for required in gistful.php uninstall.php readme.txt LICENSE includes assets/css/gistful.css assets/js/migration.js assets/css/admin.css assets/images/gioxx-wordpress.svg build/blocks/gist/block.json build/blocks/gist/index.js; do
+for required in gistful.php uninstall.php readme.txt LICENSE includes assets/css/gistful.css assets/js/migration.js assets/css/admin.css assets/images/gioxx-plugins.svg assets/images/gistful-icon.svg build/blocks/gist/block.json build/blocks/gist/index.js; do
 	[ -e "dist/gistful/$required" ] || { echo "Missing from package: $required" >&2; exit 1; }
 done
 
