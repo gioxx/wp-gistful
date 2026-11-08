@@ -7,9 +7,9 @@ Based on GistPress by Brady Vercher and Gary Jones. Licensed GPL-2.0-or-later.
 ## Features
 
 - Block, `[gist]` shortcode and pasted URLs; drop-in replacement for GistPress.
-- Server-side fetch and cache; local CSS, no browser requests to GitHub.
+- Server-side fetch and cache; local CSS and no scripts, so the plugin's own assets make no browser requests to GitHub (images inside Markdown gists are served by GitHub).
 - Dark mode (auto or forced), line numbers, ranges, highlighting, multi-file gists.
-- Markdown, notebook and CSV gists.
+- Markdown and CSV render inline; files GitHub shows with special viewers (notebooks, maps, 3D models) get a link to GitHub.
 - GistPress migration tool, WP-CLI cache command, hardened HTML sanitizing.
 - Optional API token via the `GISTFUL_GITHUB_TOKEN` constant (never stored).
 
@@ -39,3 +39,7 @@ bin/package.sh                      # build dist/gistful.zip (WordPress.org pack
 ## Credits
 
 Based on [GistPress](https://github.com/bradyvercher/gistpress) by Brady Vercher and Gary Jones.
+
+## TODO
+
+- WordPress.org screenshots: add `== Screenshots ==` captions to `readme.txt` together with `screenshot-N.png` files in the SVN `/assets` folder (light mode, dark mode, settings screen).

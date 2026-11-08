@@ -17,9 +17,9 @@ Gistful for GitHub embeds GitHub Gists in your posts and pages. It is a drop-in 
 Features:
 
 * Block editor block, `[gist]` shortcode and pasted gist URLs (oEmbed-style) all supported.
-* Local CSS, no browser requests to GitHub. Gists are fetched and cached by your server; visitors' browsers never contact GitHub because of this plugin.
+* Local CSS, no browser requests to GitHub from the plugin's own CSS and scripts. Gists are fetched and cached by your server. The only exception is images inside Markdown gists, which are served by GitHub.
 * Dark mode: follows the visitor's system preference automatically, or force light or dark in the settings.
-* Line numbers, line ranges and line highlighting, file selection for multi-file gists, and Markdown, notebook and CSV files handled sensibly.
+* Line numbers, line ranges and line highlighting, file selection for multi-file gists, and Markdown and CSV files rendered inline. Files GitHub shows with special viewers (notebooks, maps, 3D models) get a link to GitHub.
 * Migration tool (Tools > Gistful Migration) to convert GistPress content, with a backup so changes can be reverted.
 * Security hardening: gist HTML is sanitized with a strict allow-list, requests go only to GitHub over verified TLS with short timeouts and size limits, and the optional API token is read from a constant and never stored in the database or printed.
 * WP-CLI cache command and clean uninstall.
@@ -57,13 +57,11 @@ The token is only read from this constant. It is never saved in the database and
 
 = Why do some files show a link instead? =
 
-Very large files, or gists that GitHub returns truncated, are not expanded beyond the configured limit. A link to the file on GitHub is shown instead.
+There are three cases:
 
-== Screenshots ==
-
-1. A gist embedded in a post, in light mode.
-2. The same gist in dark mode.
-3. The Gistful settings screen.
+* Files GitHub displays with a special viewer (Jupyter notebooks, GeoJSON, TopoJSON and STL files) cannot be rendered inline, so a "View this file on GitHub" link is shown.
+* Gists or files that are too large or that GitHub returns truncated are replaced by a link to the gist. The size limit is fixed (2 MB per response) and is not a setting.
+* If GitHub cannot be reached and there is no saved backup copy of the gist for that post, a plain link to the gist is shown until the next successful fetch.
 
 == Changelog ==
 
