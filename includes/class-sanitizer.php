@@ -9,6 +9,9 @@ namespace Gistful;
 
 defined( 'ABSPATH' ) || exit;
 
+// DOM API property names (childNodes, nodeType, ...) are not ours to rename.
+// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+
 /**
  * Allowlist based sanitizing of gist markup (wp_kses, https only).
  */
@@ -19,6 +22,11 @@ final class Sanitizer {
 	 * kses would otherwise leave their inner text behind.
 	 */
 	const DROP_WITH_CONTENT = array( 'script', 'style', 'iframe', 'template', 'svg', 'noscript', 'textarea', 'object' );
+
+	/**
+	 * Id values GitHub uses in gist markup; others could clobber page DOM.
+	 */
+	const ID_PATTERN = '/^(?:gist\\d*|file-[A-Za-z0-9_.-]+|LC?\\d+|user-content-[A-Za-z0-9_.:-]+)$/';
 
 	/**
 	 * Viewer data-type values that need a renderer we do not ship.
@@ -32,9 +40,84 @@ final class Sanitizer {
 	 * @return string
 	 */
 	public static function clean( string $html ): string {
-		$names = implode( '|', self::DROP_WITH_CONTENT );
-		$html  = (string) preg_replace( '#<(' . $names . ')\b[^>]*>.*?</\1\s*>#is', '', $html );
-		return wp_kses( $html, self::allowed_html(), array( 'https' ) );
+		return wp_kses( self::prepare( $html ), self::allowed_html(), array( 'https' ) );
+	}
+
+	/**
+	 * DOM pre-pass: drop non-renderable elements with their content, keep only
+	 * https/fragment hrefs, https srcs and known id patterns.
+	 *
+	 * Falls back to the original markup if it cannot be parsed.
+	 *
+	 * @param string $html Raw HTML.
+	 * @return string
+	 */
+	private static function prepare( string $html ): string {
+		if ( '' === trim( $html ) ) {
+			return $html;
+		}
+
+		$previous = libxml_use_internal_errors( true );
+		try {
+			$dom = new \DOMDocument();
+			if ( ! $dom->loadHTML( '<?xml encoding="utf-8" ?>' . $html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD ) ) {
+				return $html;
+			}
+			$xpath = new \DOMXPath( $dom );
+
+			foreach ( self::DROP_WITH_CONTENT as $tag ) {
+				// Snapshot first: removing nodes while iterating a live list skips items.
+				foreach ( iterator_to_array( $dom->getElementsByTagName( $tag ) ) as $node ) {
+					if ( $node->parentNode ) {
+						$node->parentNode->removeChild( $node );
+					}
+				}
+			}
+
+			foreach ( iterator_to_array( $xpath->query( '//*[@href or @src or @id]' ) ) as $el ) {
+				if ( ! $el instanceof \DOMElement ) {
+					continue;
+				}
+				if ( $el->hasAttribute( 'href' ) && ! self::url_ok( $el->getAttribute( 'href' ), true ) ) {
+					$el->removeAttribute( 'href' );
+				}
+				if ( $el->hasAttribute( 'src' ) && ! self::url_ok( $el->getAttribute( 'src' ), false ) ) {
+					$el->removeAttribute( 'src' );
+				}
+				if ( $el->hasAttribute( 'id' ) && 1 !== preg_match( self::ID_PATTERN, $el->getAttribute( 'id' ) ) ) {
+					$el->removeAttribute( 'id' );
+				}
+			}
+
+			$out = '';
+			foreach ( $dom->childNodes as $child ) {
+				if ( XML_PI_NODE === $child->nodeType ) {
+					continue;
+				}
+				$out .= $dom->saveHTML( $child );
+			}
+			return $out;
+		} catch ( \Throwable $e ) {
+			return $html;
+		} finally {
+			libxml_clear_errors();
+			libxml_use_internal_errors( $previous );
+		}
+	}
+
+	/**
+	 * Whether a (decoded) URL may be kept.
+	 *
+	 * @param string $url       Attribute value.
+	 * @param bool   $fragments Allow fragment-only values.
+	 * @return bool
+	 */
+	private static function url_ok( string $url, bool $fragments ): bool {
+		$url = (string) preg_replace( '/[\x00-\x20\x7f]+/', '', $url );
+		if ( $fragments && 0 === strpos( $url, '#' ) ) {
+			return true;
+		}
+		return 0 === stripos( $url, 'https://' );
 	}
 
 	/**
@@ -136,14 +219,20 @@ final class Sanitizer {
 				. ' | .//*[contains(concat(" ", normalize-space(@class), " "), " render-viewer ")]';
 
 			$names = array();
+			$index = 0;
 			foreach ( $xpath->query( '//*[contains(concat(" ", normalize-space(@class), " "), " gist-file ")]' ) as $file ) {
+				++$index;
 				if ( 0 === $xpath->query( $viewer, $file )->length ) {
 					continue;
 				}
 				$name = self::file_name( $xpath, $file );
-				if ( '' !== $name ) {
-					$names[] = $name;
+				if ( '' === $name ) {
+					$ids  = $xpath->query( './/*[starts-with(@id, "file-")]', $file );
+					$name = ( $ids && $ids->length && $ids->item( 0 ) instanceof \DOMElement )
+						? $ids->item( 0 )->getAttribute( 'id' )
+						: 'file-' . $index;
 				}
+				$names[] = $name;
 			}
 			return $names;
 		} finally {
