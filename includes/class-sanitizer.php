@@ -303,7 +303,7 @@ class Sanitizer {
 	 * @param \DOMNode  $file  The .gist-file node.
 	 * @return string
 	 */
-	private static function file_name( \DOMXPath $xpath, \DOMNode $file ): string {
+	public static function file_name( \DOMXPath $xpath, \DOMNode $file ): string {
 		$links = $xpath->query( './/*[contains(concat(" ", normalize-space(@class), " "), " gist-meta ")]/a', $file );
 		if ( $links && $links->length > 1 ) {
 			$name = trim( (string) $links->item( 1 )->textContent );
