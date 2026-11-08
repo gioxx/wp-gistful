@@ -42,6 +42,10 @@ bin/package.sh                      # build dist/gistful.zip (WordPress.org pack
 
 `npm run test:php` delegates to `composer test`. The dev site and test database live under the git-ignored `.dev/` directory; WordPress core is in `vendor/johnpbloch/wordpress-core`.
 
+## Releasing
+
+Bump `Version` in `gistful.php`, `Stable tag` in `readme.txt` and the version in `package.json`, and add a `## X.Y.Z - YYYY-MM-DD` section to `CHANGELOG.md`. When the change to `gistful.php` reaches `main`, the Release workflow builds the package with `bin/package.sh` and publishes a GitHub release `vX.Y.Z` with `gistful-X.Y.Z.zip` and that changelog section. A version that already has a tag is skipped.
+
 ## Credits
 
 Based on [GistPress](https://github.com/bradyvercher/gistpress) by Brady Vercher and Gary Jones.
