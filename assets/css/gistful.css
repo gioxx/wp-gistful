@@ -5,7 +5,9 @@
  * Everything is driven by custom properties on .gistful, so a theme can
  * override any of them. Light values are the default; dark values apply with
  * data-scheme="dark", or with data-scheme="auto" under prefers-color-scheme.
- * Syntax colours follow the GitHub Primer palette (values only).
+ * Syntax colours follow the GitHub Primer palette (values only); the token
+ * selectors mirror GitHub's own gist stylesheet, so every pl-* class it
+ * emits is coloured.
  */
 
 .gistful {
@@ -27,6 +29,24 @@
 	--gistful-pl-v: #953800;
 	--gistful-pl-smi: #24292f;
 	--gistful-pl-e: #8250df;
+	--gistful-pl-bu: #82071e;
+	--gistful-pl-ii-fg: #f6f8fa;
+	--gistful-pl-ii-bg: #82071e;
+	--gistful-pl-c2-fg: #f6f8fa;
+	--gistful-pl-c2-bg: #cf222e;
+	--gistful-pl-ml: #3b2300;
+	--gistful-pl-mh: #0550ae;
+	--gistful-pl-md-fg: #82071e;
+	--gistful-pl-md-bg: #ffebe9;
+	--gistful-pl-mi1-fg: #116329;
+	--gistful-pl-mi1-bg: #dafbe1;
+	--gistful-pl-mc-fg: #953800;
+	--gistful-pl-mc-bg: #ffd8b5;
+	--gistful-pl-mi2-fg: #eaeef2;
+	--gistful-pl-mi2-bg: #0550ae;
+	--gistful-pl-mdr: #8250df;
+	--gistful-pl-ba: #57606a;
+	--gistful-pl-sg: #8c959f;
 
 	margin: 0 0 1em;
 	color: var(--gistful-fg);
@@ -51,6 +71,24 @@
 	--gistful-pl-v: #ffa657;
 	--gistful-pl-smi: #c9d1d9;
 	--gistful-pl-e: #d2a8ff;
+	--gistful-pl-bu: #f85149;
+	--gistful-pl-ii-fg: #f0f6fc;
+	--gistful-pl-ii-bg: #8e1519;
+	--gistful-pl-c2-fg: #f0f6fc;
+	--gistful-pl-c2-bg: #b62324;
+	--gistful-pl-ml: #f2cc60;
+	--gistful-pl-mh: #1f6feb;
+	--gistful-pl-md-fg: #ffdcd7;
+	--gistful-pl-md-bg: #67060c;
+	--gistful-pl-mi1-fg: #aff5b4;
+	--gistful-pl-mi1-bg: #033a16;
+	--gistful-pl-mc-fg: #ffdfb6;
+	--gistful-pl-mc-bg: #5a1e02;
+	--gistful-pl-mi2-fg: #c9d1d9;
+	--gistful-pl-mi2-bg: #1158c7;
+	--gistful-pl-mdr: #d2a8ff;
+	--gistful-pl-ba: #8b949e;
+	--gistful-pl-sg: #484f58;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -73,6 +111,24 @@
 		--gistful-pl-v: #ffa657;
 		--gistful-pl-smi: #c9d1d9;
 		--gistful-pl-e: #d2a8ff;
+		--gistful-pl-bu: #f85149;
+		--gistful-pl-ii-fg: #f0f6fc;
+		--gistful-pl-ii-bg: #8e1519;
+		--gistful-pl-c2-fg: #f0f6fc;
+		--gistful-pl-c2-bg: #b62324;
+		--gistful-pl-ml: #f2cc60;
+		--gistful-pl-mh: #1f6feb;
+		--gistful-pl-md-fg: #ffdcd7;
+		--gistful-pl-md-bg: #67060c;
+		--gistful-pl-mi1-fg: #aff5b4;
+		--gistful-pl-mi1-bg: #033a16;
+		--gistful-pl-mc-fg: #ffdfb6;
+		--gistful-pl-mc-bg: #5a1e02;
+		--gistful-pl-mi2-fg: #c9d1d9;
+		--gistful-pl-mi2-bg: #1158c7;
+		--gistful-pl-mdr: #d2a8ff;
+		--gistful-pl-ba: #8b949e;
+		--gistful-pl-sg: #484f58;
 	}
 }
 
@@ -171,38 +227,125 @@
 	color: var(--gistful-pl-c);
 }
 
-.gistful .pl-k {
-	color: var(--gistful-pl-k);
-}
-
-.gistful .pl-s,
-.gistful .pl-pds {
-	color: var(--gistful-pl-s);
-}
-
 .gistful .pl-c1,
-.gistful .pl-cce {
+.gistful .pl-s .pl-v {
 	color: var(--gistful-pl-c1);
 }
 
+.gistful .pl-e,
 .gistful .pl-en {
 	color: var(--gistful-pl-en);
+}
+
+.gistful .pl-smi,
+.gistful .pl-s .pl-s1 {
+	color: var(--gistful-pl-smi);
 }
 
 .gistful .pl-ent {
 	color: var(--gistful-pl-ent);
 }
 
-.gistful .pl-v {
+.gistful .pl-k {
+	color: var(--gistful-pl-k);
+}
+
+.gistful .pl-s,
+.gistful .pl-pds,
+.gistful .pl-s .pl-pse .pl-s1,
+.gistful .pl-sr,
+.gistful .pl-sr .pl-sre,
+.gistful .pl-sr .pl-sra {
+	color: var(--gistful-pl-s);
+}
+
+.gistful .pl-v,
+.gistful .pl-smw {
 	color: var(--gistful-pl-v);
 }
 
-.gistful .pl-smi {
-	color: var(--gistful-pl-smi);
+.gistful .pl-bu {
+	color: var(--gistful-pl-bu);
 }
 
-.gistful .pl-e {
-	color: var(--gistful-pl-e);
+.gistful .pl-ii {
+	background-color: var(--gistful-pl-ii-bg);
+	color: var(--gistful-pl-ii-fg);
+}
+
+.gistful .pl-c2 {
+	background-color: var(--gistful-pl-c2-bg);
+	color: var(--gistful-pl-c2-fg);
+}
+
+.gistful .pl-c2::before {
+	content: "^M";
+}
+
+/* Escapes inside a regular expression. */
+.gistful .pl-sr .pl-cce {
+	color: var(--gistful-pl-ent);
+	font-weight: 700;
+}
+
+/* Markdown and diff tokens. */
+.gistful .pl-ml {
+	color: var(--gistful-pl-ml);
+}
+
+.gistful .pl-mh,
+.gistful .pl-mh .pl-en,
+.gistful .pl-ms {
+	color: var(--gistful-pl-mh);
+	font-weight: 700;
+}
+
+.gistful .pl-mi {
+	color: var(--gistful-fg);
+	font-style: italic;
+}
+
+.gistful .pl-mb {
+	color: var(--gistful-fg);
+	font-weight: 700;
+}
+
+.gistful .pl-md {
+	background-color: var(--gistful-pl-md-bg);
+	color: var(--gistful-pl-md-fg);
+}
+
+.gistful .pl-mi1 {
+	background-color: var(--gistful-pl-mi1-bg);
+	color: var(--gistful-pl-mi1-fg);
+}
+
+.gistful .pl-mc {
+	background-color: var(--gistful-pl-mc-bg);
+	color: var(--gistful-pl-mc-fg);
+}
+
+.gistful .pl-mi2 {
+	background-color: var(--gistful-pl-mi2-bg);
+	color: var(--gistful-pl-mi2-fg);
+}
+
+.gistful .pl-mdr {
+	color: var(--gistful-pl-mdr);
+	font-weight: 700;
+}
+
+.gistful .pl-ba {
+	color: var(--gistful-pl-ba);
+}
+
+.gistful .pl-sg {
+	color: var(--gistful-pl-sg);
+}
+
+.gistful .pl-corl {
+	color: var(--gistful-pl-s);
+	text-decoration: underline;
 }
 
 .gistful .gist-meta {

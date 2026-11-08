@@ -135,9 +135,11 @@ class Test_Settings_Page extends Gistful_Test_Case {
 		$this->assertNotEmpty( $classes );
 		$dark_block = (string) substr( $css, (int) strpos( $css, '[data-scheme="dark"]' ) );
 		$alias      = array(
-			'pl-cce' => 'pl-c1',
 			'pl-pds' => 'pl-s',
+			'pl-e'   => 'pl-en',
 		);
+		// Like GitHub, an escape outside a regular expression takes the colour of its string.
+		$classes = array_diff( $classes, array( 'pl-cce' ) );
 		foreach ( $classes as $class ) {
 			$var = $alias[ $class ] ?? $class;
 			$this->assertMatchesRegularExpression( '/\.' . $class . '\b[^{]*\{[^}]*var\(--gistful-' . $var . '\)/', $css, "$class styled" );
