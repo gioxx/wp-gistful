@@ -8,6 +8,7 @@
 	convertWarningsToExceptions="true"
 	convertDeprecationsToExceptions="false"
 	>
+	<!-- Deprecations from WP core are not converted; plugin-originated ones fail via Gistful_Test_Case. -->
 	<testsuites>
 		<testsuite name="gistful">
 			<directory prefix="test-" suffix=".php">./tests/php/</directory>
