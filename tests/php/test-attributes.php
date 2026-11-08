@@ -44,8 +44,12 @@ class Test_Attributes extends Gistful_Test_Case {
 		$this->assertSame( array( 'min' => 0, 'max' => 0 ), Attributes::normalize( array( 'id' => 'a' ) )['lines'] );
 	}
 
+	public function test_highlight_color_defaults_to_empty() {
+		$this->assertSame( '', Attributes::normalize( array( 'id' => 'a' ) )['highlight_color'] );
+	}
+
 	public function test_highlight_color_rejects_css_injection() {
-		$this->assertSame( '#ffc', Attributes::normalize( array( 'id' => 'a', 'highlight_color' => 'red;background:url(x)' ) )['highlight_color'] );
+		$this->assertSame( '', Attributes::normalize( array( 'id' => 'a', 'highlight_color' => 'red;background:url(x)' ) )['highlight_color'] );
 		$this->assertSame( '#abcdef', Attributes::normalize( array( 'id' => 'a', 'highlight_color' => '#abcdef' ) )['highlight_color'] );
 	}
 
