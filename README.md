@@ -2,7 +2,7 @@
 
 Embed GitHub Gists in WordPress. A modern replacement for GistPress.
 
-Based on GistPress by Brady Vercher and Gary Jones. Licensed GPL-2.0-or-later.
+Based on GistPress by Brady Vercher and Gary Jones. Licensed GPL-3.0-or-later.
 
 ## Features
 
