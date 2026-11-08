@@ -7,9 +7,14 @@
 
 require_once __DIR__ . '/lib/sqlite-env.php';
 
-$site = $argv[1];
-$port = $argv[2] ?? '8888';
 $root = dirname( __DIR__ );
+$site = $argv[1];
+// The SQLite drop-in rejects relative DB paths, so always work with an absolute site dir.
+if ( '/' !== substr( $site, 0, 1 ) ) {
+	$site = $root . '/' . preg_replace( '#^(\./)+#', '', $site );
+}
+$site = rtrim( $site, '/' );
+$port = $argv[2] ?? '8888';
 
 gistful_prepare_sqlite_env( $site );
 
