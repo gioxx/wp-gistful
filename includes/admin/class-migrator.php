@@ -396,12 +396,20 @@ final class Migrator {
 		}
 
 		$no_revision = new \WP_Error( 'gistful_no_revision', __( 'Revisions are disabled for this post, so it was not converted.', 'gistful' ), array( 'status' => 409 ) );
-		if ( ! wp_revisions_enabled( $post ) ) {
+		// With a keep limit of 1, the revision made by wp_update_post() would trim the original.
+		$keep = wp_revisions_to_keep( $post );
+		if ( ! wp_revisions_enabled( $post ) || ( $keep >= 0 && $keep < 2 ) ) {
 			return $no_revision;
 		}
 		wp_save_post_revision( $post_id );
-		$latest = array_values( wp_get_post_revisions( $post_id, array( 'numberposts' => 1 ) ) );
-		if ( ! $latest || $latest[0]->post_content !== $post->post_content ) {
+		$latest = null;
+		foreach ( wp_get_post_revisions( $post_id ) as $revision ) { // Newest first; autosaves are not recovery points.
+			if ( ! wp_is_post_autosave( $revision ) ) {
+				$latest = $revision;
+				break;
+			}
+		}
+		if ( ! $latest || $latest->post_content !== $post->post_content ) {
 			return $no_revision;
 		}
 
@@ -488,6 +496,11 @@ final class Migrator {
 			return null;
 		}
 		if ( preg_match( '#<figcaption[^>]*>(.*?)</figcaption>#is', $html, $m ) && '' !== trim( wp_strip_all_tags( $m[1] ) ) ) {
+			return null;
+		}
+
+		// The block only supports wide/full alignment; anything else would be lost.
+		if ( isset( $attrs['align'] ) && '' !== $attrs['align'] && ! in_array( $attrs['align'], array( 'wide', 'full' ), true ) ) {
 			return null;
 		}
 
