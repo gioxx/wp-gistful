@@ -72,6 +72,39 @@ class Test_Block extends Gistful_Test_Case {
 		$this->assertStringContainsString( 'gistful', $response->get_data()['rendered'] );
 	}
 
+	public function test_block_style_is_editor_only() {
+		$type = WP_Block_Type_Registry::get_instance()->get_registered( 'gistful/gist' );
+		$this->assertSame( array(), $type->style_handles, 'No frontend style handle: Embed enqueues it per settings.' );
+		$this->assertContains( 'gistful', $type->editor_style_handles );
+	}
+
+	public function test_front_page_without_gists_does_not_enqueue_style() {
+		add_filter( 'should_load_block_assets_on_demand', '__return_false' );
+		add_filter( 'should_load_separate_core_block_assets', '__return_false' );
+		wp_dequeue_style( 'gistful' );
+		$this->go_to( home_url( '/' ) );
+		do_action( 'wp_enqueue_scripts' );
+		$this->assertFalse( wp_style_is( 'gistful', 'enqueued' ) );
+		remove_filter( 'should_load_separate_core_block_assets', '__return_false' );
+		remove_filter( 'should_load_block_assets_on_demand', '__return_false' );
+	}
+
+	public function test_block_render_with_load_css_off_does_not_enqueue() {
+		$this->mock_ok();
+		update_option( 'gistful_settings', array( 'load_css' => false ) );
+		wp_dequeue_style( 'gistful' );
+		$html = render_block( parse_blocks( '<!-- wp:gistful/gist {"url":"https://gist.github.com/gioxx/abc123"} /-->' )[0] );
+		$this->assertStringContainsString( 'class="gistful', $html );
+		$this->assertFalse( wp_style_is( 'gistful', 'enqueued' ) );
+	}
+
+	public function test_block_render_with_load_css_on_enqueues() {
+		$this->mock_ok();
+		wp_dequeue_style( 'gistful' );
+		render_block( parse_blocks( '<!-- wp:gistful/gist {"url":"https://gist.github.com/gioxx/abc123"} /-->' )[0] );
+		$this->assertTrue( wp_style_is( 'gistful', 'enqueued' ) );
+	}
+
 	/**
 	 * Strip the block wrapper div.
 	 *

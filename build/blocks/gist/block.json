@@ -55,5 +55,5 @@
     }
   },
   "editorScript": "file:./index.js",
-  "style": "gistful"
+  "editorStyle": "gistful"
 }
