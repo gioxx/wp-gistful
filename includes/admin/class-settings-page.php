@@ -8,6 +8,7 @@
 namespace Gistful\Admin;
 
 use Gistful\Cache;
+use Gistful\Conflicts;
 use Gistful\Settings_Store;
 
 defined( 'ABSPATH' ) || exit;
@@ -134,20 +135,21 @@ final class Settings_Page {
 	}
 
 	/**
-	 * Status rows. Task 10 can extend this list with conflict information.
+	 * Status rows.
 	 *
 	 * @return array<string, array{label: string, value: string}>
 	 */
 	public static function status_rows(): array {
 		$rows = array(
-			'token'  => array(
+			'token'     => array(
 				'label' => __( 'GitHub token configured', 'gistful' ),
 				'value' => self::yes_no( defined( 'GISTFUL_GITHUB_TOKEN' ) && '' !== (string) GISTFUL_GITHUB_TOKEN ),
 			),
-			'legacy' => array(
+			'legacy'    => array(
 				'label' => __( 'Legacy GistPress data found', 'gistful' ),
 				'value' => self::yes_no( self::has_legacy_data() ),
 			),
+			'conflicts' => Conflicts::status(),
 		);
 
 		return $rows;

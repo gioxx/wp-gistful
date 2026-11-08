@@ -33,6 +33,7 @@ final class Plugin {
 		self::$booted = true;
 
 		add_action( 'init', array( Embed::class, 'register_style' ) );
+		Conflicts::register();
 		// Priority 20: after GistPress (default priority), so Gistful takes over.
 		add_action( 'init', array( self::class, 'register_embeds' ), 20 );
 		add_action( 'save_post', array( Prefetch::class, 'on_save' ), 10, 2 );
