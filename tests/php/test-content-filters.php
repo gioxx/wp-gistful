@@ -222,4 +222,52 @@ class Test_Content_Filters extends Gistful_Test_Case {
 		$this->assertStringNotContainsString( 'gistful-ph', $excerpt );
 		$this->assertStringContainsString( 'Intro text', $excerpt );
 	}
+
+	public function test_nested_the_content_from_late_priority_is_protected() {
+		// Easy Table of Contents re-runs the_content on the raw post from priority 100.
+		$this->the_content( "Intro\n\n" . self::URL . "\n\nOutro" );
+		$inner = '';
+		$cb    = function ( $content ) use ( &$inner, &$cb ) {
+			remove_filter( 'the_content', $cb, 100 );
+			$inner = apply_filters( 'the_content', get_post()->post_content );
+			add_filter( 'the_content', $cb, 100 );
+			return $content;
+		};
+		add_filter( 'the_content', $cb, 100 );
+		apply_filters( 'the_content', get_post()->post_content );
+		remove_filter( 'the_content', $cb, 100 );
+		$this->assert_untouched( $inner, array( 'id' => self::ID ) );
+	}
+
+	public function test_nested_the_content_late_render_does_not_leak() {
+		$this->the_content( 'Text' );
+		$inner = '';
+		$late  = static function ( $content ) {
+			return $content . do_shortcode( '[gist id="' . self::ID . '"]' );
+		};
+		$cb    = function ( $content ) use ( &$inner, &$cb, $late ) {
+			remove_filter( 'the_content', $cb, 7 );
+			add_filter( 'the_content', $late, 120 );
+			$inner = apply_filters( 'the_content', 'Inner' );
+			remove_filter( 'the_content', $late, 120 );
+			add_filter( 'the_content', $cb, 7 );
+			return $content;
+		};
+		add_filter( 'the_content', $cb, 7 );
+		apply_filters( 'the_content', 'Text' );
+		remove_filter( 'the_content', $cb, 7 );
+		$this->assertStringContainsString( 'class="gistful', $inner );
+		$this->assertStringNotContainsString( 'gistful-ph', $inner );
+	}
+
+	public function test_store_is_emptied_when_content_is_dropped() {
+		$drop = static function () {
+			return 'Replaced';
+		};
+		add_filter( 'the_content', $drop, 50 );
+		$this->the_content( "Intro\n\n" . self::URL );
+		remove_filter( 'the_content', $drop, 50 );
+		$store = new ReflectionProperty( \Gistful\Placeholders::class, 'store' );
+		$this->assertSame( array(), $store->getValue() );
+	}
 }

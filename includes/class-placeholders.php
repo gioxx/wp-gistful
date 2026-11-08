@@ -48,12 +48,52 @@ final class Placeholders {
 	private static int $counter = 0;
 
 	/**
+	 * One entry per running the_content call, innermost last: true until that
+	 * call reaches the swap. WP_Hook::current_priority() cannot be used here,
+	 * because in nested calls it reports the outermost call's priority.
+	 *
+	 * @var bool[]
+	 */
+	private static array $frames = array();
+
+	/**
 	 * Hook the late swap.
 	 *
 	 * @return void
 	 */
 	public static function register(): void {
+		add_filter( 'the_content', array( self::class, 'open' ), PHP_INT_MIN );
 		add_filter( 'the_content', array( self::class, 'restore' ), self::PRIORITY );
+		add_filter( 'the_content', array( self::class, 'close' ), PHP_INT_MAX );
+	}
+
+	/**
+	 * Start of a the_content call.
+	 *
+	 * @param mixed $content Content.
+	 * @return mixed
+	 */
+	public static function open( mixed $content ): mixed {
+		self::$frames[] = true;
+
+		return $content;
+	}
+
+	/**
+	 * End of a the_content call. Once the outermost call is over, parked HTML
+	 * that was never swapped back (content dropped by another filter) can no
+	 * longer be reached, so the store is emptied.
+	 *
+	 * @param mixed $content Content.
+	 * @return mixed
+	 */
+	public static function close( mixed $content ): mixed {
+		array_pop( self::$frames );
+		if ( array() === self::$frames ) {
+			self::$store = array();
+		}
+
+		return $content;
 	}
 
 	/**
@@ -85,6 +125,9 @@ final class Placeholders {
 	 * @return mixed
 	 */
 	public static function restore( mixed $content ): mixed {
+		if ( array() !== self::$frames ) {
+			self::$frames[ array_key_last( self::$frames ) ] = false;
+		}
 		if ( ! is_string( $content ) || '' === self::$token || array() === self::$store || false === strpos( $content, 'data-gistful-ph=' ) ) {
 			return $content;
 		}
@@ -122,16 +165,11 @@ final class Placeholders {
 	 * @return bool
 	 */
 	private static function in_early_the_content(): bool {
-		global $wp_filter;
-
-		if ( 'the_content' !== current_filter() || ! isset( $wp_filter['the_content'] ) || ! $wp_filter['the_content'] instanceof \WP_Hook ) {
+		if ( 'the_content' !== current_filter() || array() === self::$frames || true !== end( self::$frames ) ) {
 			return false;
 		}
-		if ( false === has_filter( 'the_content', array( self::class, 'restore' ) ) ) {
-			return false;
-		}
-		$priority = $wp_filter['the_content']->current_priority();
 
-		return false !== $priority && $priority < self::PRIORITY;
+		// Some plugins strip the_content callbacks; without the swap, no placeholder.
+		return false !== has_filter( 'the_content', array( self::class, 'restore' ) );
 	}
 }
