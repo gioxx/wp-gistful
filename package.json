@@ -1,0 +1,14 @@
+{
+	"name": "gistful",
+	"version": "0.1.0",
+	"private": true,
+	"license": "GPL-2.0-or-later",
+	"scripts": {
+		"build": "wp-scripts build --webpack-src-dir=src",
+		"test:php": "composer test --",
+		"lint:php": "composer lint"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^30.0.0"
+	}
+}
