@@ -81,6 +81,8 @@ final class Embed {
 				$is_link = true;
 			} elseif ( $fallback ) {
 				$ttl = Cache::NEGATIVE_TTL;
+			} elseif ( 'api' === $payload->source ) {
+				$ttl = Cache::fallback_ttl();
 			}
 
 			if ( ! $is_link ) {
@@ -217,7 +219,7 @@ final class Embed {
 				return $payload;
 			}
 			self::log( "fetched $id via {$payload->source}" );
-			Cache::set( $raw_key, Backup::pack( $payload ) );
+			Cache::set( $raw_key, Backup::pack( $payload ), 'api' === $payload->source ? Cache::fallback_ttl() : null );
 		}
 
 		if ( $post_id && self::post_is_certain( $post_id ) ) {

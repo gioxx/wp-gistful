@@ -172,4 +172,33 @@ class Test_Cache_Backup extends Gistful_Test_Case {
 		$this->assertSame( 'backup', $p->source );
 		$this->assertNull( Backup::get( $post, 'zzz', '' ) );
 	}
+
+	/**
+	 * Payload as the API fallback returns it: raw files, no highlighted markup.
+	 *
+	 * @return Gist_Payload
+	 */
+	private function api_payload(): Gist_Payload {
+		return new Gist_Payload( '', array( 'a.sh' ), 'api', array( 'a.sh' => 'echo hi' ) );
+	}
+
+	public function test_api_backup_is_written_when_there_is_none() {
+		$post = self::factory()->post->create();
+		Backup::maybe_store( $post, 'abc', '', $this->api_payload() );
+		$this->assertSame( array( 'a.sh' => 'echo hi' ), Backup::get( $post, 'abc', '' )->raw_files );
+	}
+
+	public function test_api_backup_does_not_replace_a_highlighted_backup() {
+		$post = self::factory()->post->create();
+		Backup::maybe_store( $post, 'abc', '', $this->payload() );
+		Backup::maybe_store( $post, 'abc', '', $this->api_payload() );
+		$this->assertSame( $this->payload()->html, Backup::get( $post, 'abc', '' )->html );
+	}
+
+	public function test_api_backup_does_not_shadow_legacy_gistpress_meta() {
+		$post = self::factory()->post->create();
+		update_post_meta( $post, '_gist_raw_' . md5( 'https://gist.github.com/abc.json' ), addslashes( '<div>legacy</div>' ) );
+		Backup::maybe_store( $post, 'abc', '', $this->api_payload() );
+		$this->assertSame( '<div>legacy</div>', Backup::get( $post, 'abc', '' )->html );
+	}
 }

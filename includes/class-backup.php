@@ -69,6 +69,13 @@ final class Backup {
 		if ( $p->is_empty() ) {
 			return;
 		}
+		// An API copy has no highlighting: never let it replace a highlighted one (Gistful or GistPress).
+		if ( '' === $p->html ) {
+			$current = self::get( $post_id, $id, $file );
+			if ( $current && '' !== $current->html ) {
+				return;
+			}
+		}
 		$data   = self::pack( $p );
 		$key    = self::meta_key( $id, $file );
 		$stored = get_post_meta( $post_id, $key, true );

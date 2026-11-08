@@ -272,4 +272,44 @@ class Test_Embed extends Gistful_Test_Case {
 		$this->assertStringContainsString( 'gist-file', Embed::render( array( 'id' => 'abc123' ) ) );
 		$this->assertSame( 1, $this->http_calls() );
 	}
+
+	/**
+	 * Expiry timestamp of a transient.
+	 *
+	 * @param string $key Transient key.
+	 * @return int
+	 */
+	private function expiry( string $key ): int {
+		return (int) get_option( '_transient_timeout_' . $key );
+	}
+
+	public function test_api_fallback_is_cached_for_one_hour_only() {
+		$this->mock( 'gist.github.com', 500, '' );
+		$this->mock( 'api.github.com', 200, $this->fixture( 'api-gist.json' ) );
+		$attr = array( 'id' => 'abc123' );
+		$this->assertStringContainsString( 'blob-code', Embed::render( $attr ) );
+		$this->assertEqualsWithDelta( time() + HOUR_IN_SECONDS, $this->expiry( Cache::html_key( Gistful\Attributes::normalize( $attr ) ) ), 5 );
+		$this->assertEqualsWithDelta( time() + HOUR_IN_SECONDS, $this->expiry( Cache::raw_key( 'abc123', '' ) ), 5 );
+	}
+
+	public function test_api_fallback_keeps_a_shorter_configured_ttl() {
+		$this->mock( 'gist.github.com', 500, '' );
+		$this->mock( 'api.github.com', 200, $this->fixture( 'api-gist.json' ) );
+		$ttl = static function () {
+			return 60;
+		};
+		add_filter( 'gistful_cache_ttl', $ttl );
+		Embed::render( array( 'id' => 'abc123' ) );
+		remove_filter( 'gistful_cache_ttl', $ttl );
+		$this->assertEqualsWithDelta( time() + 60, $this->expiry( Cache::raw_key( 'abc123', '' ) ), 5 );
+	}
+
+	public function test_api_fallback_stores_nothing_when_caching_is_disabled() {
+		$this->mock( 'gist.github.com', 500, '' );
+		$this->mock( 'api.github.com', 200, $this->fixture( 'api-gist.json' ) );
+		add_filter( 'gistful_cache_ttl', '__return_zero' );
+		Embed::render( array( 'id' => 'abc123' ) );
+		remove_filter( 'gistful_cache_ttl', '__return_zero' );
+		$this->assertFalse( Cache::get( Cache::raw_key( 'abc123', '' ) ) );
+	}
 }
