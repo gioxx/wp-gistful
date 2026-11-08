@@ -79,4 +79,73 @@ class Test_Sanitizer extends Gistful_Test_Case {
 	public function test_fragment_hrefs_survive() {
 		$this->assertStringContainsString( 'href="#file-x"', Sanitizer::clean( '<a href="#file-x">x</a>' ) );
 	}
+
+	/**
+	 * @dataProvider bad_urls
+	 */
+	public function test_non_https_urls_dropped( string $url ) {
+		$out = Sanitizer::clean( '<a href="' . $url . '">A</a><img src="' . $url . '" alt="i">' );
+		$this->assertStringNotContainsString( 'href=', $out );
+		$this->assertStringNotContainsString( 'src=', $out );
+		$this->assertStringContainsString( '>A</a>', $out );
+	}
+
+	public function bad_urls(): array {
+		return array(
+			'protocol-relative' => array( '//evil.com/x' ),
+			'root-relative'     => array( '/wp-admin/' ),
+			'relative'          => array( 'x.png' ),
+			'data'              => array( 'data:text/html;base64,PHNjcmlwdD4=' ),
+			'entity js'         => array( '&#106;avascript:alert(1)' ),
+			'tab js'            => array( 'java&#x09;script:alert(1)' ),
+			'colon js'          => array( 'javascript&colon;alert(1)' ),
+			'http'              => array( 'http://x.y/' ),
+		);
+	}
+
+	public function test_https_urls_kept() {
+		$out = Sanitizer::clean( '<a href="https://x.y/a">A</a><img src="https://x.y/i.png">' );
+		$this->assertStringContainsString( 'href="https://x.y/a"', $out );
+		$this->assertStringContainsString( 'src="https://x.y/i.png"', $out );
+	}
+
+	public function test_large_unclosed_svg_keeps_rows() {
+		$rows = str_repeat( '<table><tr><td class="blob-code">row</td></tr></table>', 28000 );
+		$out  = Sanitizer::clean( '<div class="gist"><svg><path d="x">' . str_repeat( 'a', 1400000 ) . '</div>' . $rows );
+		$this->assertStringContainsString( 'row', Sanitizer::clean( '<div>' . $rows . '</div>' ) );
+		$this->assertNotSame( '', $out );
+		$this->assertStringContainsString( 'row', $out );
+		$big = Sanitizer::clean( '<div class="gist">' . $rows . '<template>' . str_repeat( 'T', 1500000 ) . '</template></div>' );
+		$this->assertStringContainsString( 'row', $big );
+		$this->assertStringNotContainsString( 'TTTT', $big );
+	}
+
+	public function test_nested_template_leaves_no_text() {
+		$out = Sanitizer::clean( '<div><template><template>inner</template>outer</template>ok</div>' );
+		$this->assertStringNotContainsString( 'inner', $out );
+		$this->assertStringNotContainsString( 'outer', $out );
+		$this->assertStringContainsString( 'ok', $out );
+	}
+
+	public function test_attribute_with_script_text_does_not_lose_content() {
+		$out = Sanitizer::clean( '<a title="<script>" href="https://x">KEEP</a> mid </script>tail' );
+		$this->assertStringContainsString( 'KEEP', $out );
+		$this->assertStringContainsString( 'tail', $out );
+		$this->assertStringNotContainsString( '<script', $out );
+	}
+
+	public function test_flagged_file_without_meta_gets_fallback_name() {
+		$with_id = '<div class="gist"><div class="gist-file"><div id="file-foo-ipynb"><iframe src="https://x"></iframe></div></div></div>';
+		$this->assertSame( array( 'file-foo-ipynb' ), Sanitizer::unsupported_files( $with_id ) );
+		$bare = '<div class="gist"><div class="gist-file"><div class="render-container"></div></div></div>';
+		$this->assertSame( array( 'file-1' ), Sanitizer::unsupported_files( $bare ) );
+	}
+
+	public function test_untrusted_ids_dropped_fixture_ids_kept() {
+		$out = Sanitizer::clean( '<div id="wpadminbar" class="x">a</div><div id="gist123">b</div><div id="file-a-sh">c</div><td id="LC4">d</td><h1 id="user-content-foo">e</h1>' );
+		$this->assertStringNotContainsString( 'wpadminbar', $out );
+		foreach ( array( 'gist123', 'file-a-sh', 'LC4', 'user-content-foo' ) as $id ) {
+			$this->assertStringContainsString( 'id="' . $id . '"', $out );
+		}
+	}
 }
