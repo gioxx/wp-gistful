@@ -66,7 +66,7 @@ class Test_Uninstall extends Gistful_Test_Case {
 	 */
 	public function test_uninstall_loops_over_sites_on_multisite() {
 		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Needs WP_TESTS_MULTISITE=1.' );
+			$this->markTestSkipped( 'Needs WP_MULTISITE=1.' );
 		}
 		$blog = self::factory()->blog->create();
 		switch_to_blog( $blog );

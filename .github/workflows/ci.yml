@@ -43,13 +43,13 @@ jobs:
         with:
           composer-options: --prefer-dist
       - run: composer test
-      # The uninstall loop over sites needs a multisite install. Only that class
-      # runs here: other suites (Conflicts) are not yet multisite-clean.
-      - name: PHPUnit uninstall (multisite)
+      # The whole suite again on a multisite install (uninstall loop over sites,
+      # network-activated GistPress, super-admin capabilities).
+      - name: PHPUnit (multisite)
         if: matrix.wp == 'latest' && matrix.php == '8.3'
         env:
           WP_MULTISITE: '1'
-        run: composer test -- --filter Test_Uninstall
+        run: composer test
 
   plugin-check:
     name: Plugin Check

@@ -170,6 +170,17 @@ class Test_Embed extends Gistful_Test_Case {
 		$this->assertStringContainsString( 'blob-code', Embed::render( array( 'id' => 'abc123' ) ) );
 	}
 
+	public function test_truncated_payload_gives_uncached_link_without_css() {
+		$this->mock( 'gist.github.com', 500, '' );
+		$this->mock( 'api.github.com', 200, $this->fixture( 'api-truncated.json' ) );
+		$attr = array( 'id' => 'abc123' );
+		$out  = Embed::render( $attr );
+		$this->assertStringContainsString( 'gist.github.com/abc123', $out );
+		$this->assertStringNotContainsString( 'gist-data', $out );
+		$this->assertFalse( Cache::get( Cache::html_key( Gistful\Attributes::normalize( $attr ) ) ), 'Link must not be cached as HTML.' );
+		$this->assertFalse( wp_style_is( 'gistful', 'enqueued' ) );
+	}
+
 	public function test_css_enqueued_only_when_rendered() {
 		$this->assertFalse( wp_style_is( 'gistful', 'enqueued' ) );
 		$this->mock_ok();

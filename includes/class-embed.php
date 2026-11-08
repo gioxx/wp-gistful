@@ -72,7 +72,8 @@ final class Embed {
 				self::log( $payload ? "using backup $id" : "using link $id" );
 			}
 
-			if ( $payload ) {
+			// A truncated payload can only be shown as a link (handled below).
+			if ( $payload && ! $payload->truncated ) {
 				$html = Renderer::render( $payload, $attr );
 			}
 			if ( '' === $html ) {
