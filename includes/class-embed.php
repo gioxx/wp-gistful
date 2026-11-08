@@ -87,7 +87,7 @@ final class Embed {
 			}
 		}
 
-		if ( $post_id ) {
+		if ( $post_id && self::post_is_certain( $post_id ) ) {
 			Cache::track( $post_id, $html_key, $raw_key );
 		}
 
@@ -151,7 +151,7 @@ final class Embed {
 	 * @param string $id Gist ID.
 	 * @return string[]
 	 */
-	private static function file_names( string $id ): array {
+	public static function file_names( string $id ): array {
 		$key    = Cache::PREFIX . 'f_' . md5( $id );
 		$cached = Cache::get( $key );
 		if ( is_array( $cached ) ) {
@@ -190,11 +190,22 @@ final class Embed {
 			Cache::set( $raw_key, Backup::pack( $payload ) );
 		}
 
-		if ( $post_id && get_queried_object_id() === $post_id && in_the_loop() && is_main_query() ) {
+		if ( $post_id && self::post_is_certain( $post_id ) ) {
 			Backup::maybe_store( $post_id, $id, $file, $payload );
 		}
 
 		return $payload;
+	}
+
+	/**
+	 * Whether the post ID is certainly the main content of the current request
+	 * (never true in widgets or other secondary contexts).
+	 *
+	 * @param int $post_id Post ID.
+	 * @return bool
+	 */
+	private static function post_is_certain( int $post_id ): bool {
+		return get_queried_object_id() === $post_id && in_the_loop() && is_main_query();
 	}
 
 	/**
