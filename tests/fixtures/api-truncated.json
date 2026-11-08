@@ -1,0 +1,117 @@
+{
+  "url": "https://api.github.com/gists/89a8520d1117114faaa1268f0c8f8740",
+  "forks_url": "https://api.github.com/gists/89a8520d1117114faaa1268f0c8f8740/forks",
+  "commits_url": "https://api.github.com/gists/89a8520d1117114faaa1268f0c8f8740/commits",
+  "id": "89a8520d1117114faaa1268f0c8f8740",
+  "node_id": "G_kwDOABr8mdoAIDg5YTg1MjBkMTExNzExNGZhYWExMjY4ZjBjOGY4NzQw",
+  "git_pull_url": "https://gist.github.com/89a8520d1117114faaa1268f0c8f8740.git",
+  "git_push_url": "https://gist.github.com/89a8520d1117114faaa1268f0c8f8740.git",
+  "html_url": "https://gist.github.com/gioxx/89a8520d1117114faaa1268f0c8f8740",
+  "files": {
+    "swaksWrapper.sh": {
+      "filename": "swaksWrapper.sh",
+      "type": "application/x-sh",
+      "language": "Shell",
+      "raw_url": "https://gist.githubusercontent.com/gioxx/89a8520d1117114faaa1268f0c8f8740/raw/6ea5ff7902a73c914538618238b44e9580f15fb4/swaksWrapper.sh",
+      "size": 8730,
+      "truncated": true,
+      "content": "#!/usr/bin/env bash\n# SMTP interactive tester wrapper for swaks\n# Gioxx, 2025 - https://github.com/gioxx\n# - Checks and optionally installs swaks and Net::SSLeay (interactive)\n# - Prompts the user for SMTP parameters with sensible defaults (Office365)\n# - Builds a safe argument vector and runs swaks\n# - Appends an RFC-like date to the Subject\n\nset -euo pipefail\n\n# Prompt with default value\nprompt_default() {\n  local var_name=\"$1\"; shift\n  local prompt_msg=\"$1\"; shift\n  local default=\"$1\"; shift\n  local reply\n\n  if [ -t 0 ]; then\n    read -r -p \"$prompt_msg [$default]: \" reply || reply=\"\"\n  else\n    reply=\"$default\"\n  fi\n\n  if [ -z \"${reply}\" ]; then\n    eval \"$var_name=\\\"\\$default\\\"\"\n  else\n    eval \"$var_name=\\\"\\$reply\\\"\"\n  fi\n}\n\n# Yes/No prompt (default yes = true)\nprompt_yesno() {\n  local var_name=\"$1\"; shift\n  local prompt_msg=\"$1\"; shift\n  local default_yes=\"${1:-y}\"; shift\n  local reply\n\n  if [ -t 0 ]; then\n    read -r -p \"$prompt_msg ($([ \"$default_yes\" = \"y\" ] && echo \"Y/n\" || echo \"y/N\")): \" reply || reply=\"\"\n  else\n    reply=\"$default_yes\"\n  fi\n\n  reply=\"${reply,,}\" # to lowercase\n  if [ -z \"$reply\" ]; then\n    reply=\"$default_yes\"\n  fi\n\n  if [[ \"$reply\" == \"y\" || \"$reply\" == \"yes\" ]]; then\n    eval \"$var_name=true\"\n  else\n    eval \"$var_name=false\"\n  fi\n}\n\n# Root or sudo helper\nneed_sudo() {\n  if [ \"$(id -u)\" -eq 0 ]; then\n    echo \"\"\n  elif command -v sudo >/dev/null 2>&1; then\n    echo \"sudo\"\n  else\n    echo \"\"\n  fi\n}\n\n# Detect basic OS / package manager\ndetect_pkg_env() {\n  # Outputs two values: PKG_MGR and FAMILY\n  # FAMILY: deb|rhel|alpine|mac|unknown\n  if [ \"$(uname -s)\" = \"Darwin\" ]; then\n    echo \"brew mac\"\n    return\n  fi\n\n  if [ -f /etc/os-release ]; then\n    . /etc/os-release\n    ID_LIKE=\"${ID_LIKE:-}\"\n    case \"$ID $ID_LIKE\" in\n      *debian*|*ubuntu*|*Debian*|*Ubuntu*)\n        if command -v apt >/dev/null 2>&1 || command -v apt-get >/dev/null 2>&1; then\n          echo \"apt deb\"\n          return\n        fi\n        ;;\n      *rhel*|*fedora*|*centos*|*rocky*|*almalinux*)\n        if command -v dnf >/dev/null 2>&1; then\n          echo \"dnf rhel\"; return\n        elif command -v yum >/dev/null 2>&1; then\n          echo \"yum rhel\"; return\n        fi\n        ;;\n      *alpine*)\n        if command -v apk >/dev/null 2>&1; then\n          echo \"apk alpine\"; return\n        fi\n        ;;\n    esac\n  fi\n\n  # Fallback unknown\n  echo \"unknown unknown\"\n}\n\n# Install swaks\ninstall_swaks() {\n  local SUDO; SUDO=\"$(need_sudo)\"\n  local PKG_MGR FAMILY; read -r PKG_MGR FAMILY < <(detect_pkg_env)\n\n  case \"$FAMILY\" in\n    deb)\n      $SUDO apt update\n      $SUDO apt install -y swaks\n      ;;\n    rhel)\n      if [ \"$PKG_MGR\" = \"dnf\" ]; then\n        $SUDO dnf install -y swaks || $SUDO dnf install -y perl-App-cpanminus\n      else\n        $SUDO yum install -y swaks || $SUDO yum install -y perl-App-cpanminus\n      fi\n      ;;\n    alpine)\n      $SUDO apk add --no-cache swaks\n      ;;\n    mac)\n      if ! command -v brew >/dev/null 2>&1; then\n        echo \"Homebrew not found. Install it from https://brew.sh and re-run.\" >&2\n        return 1\n      fi\n      brew install swaks\n      ;;\n    *)\n      echo \"Unsupported OS for auto-install of swaks. Please install swaks manually.\" >&2\n      return 1\n      ;;\n  esac\n}\n\n# Install Net::SSLeay (and IO::Socket::SSL)\ninstall_net_ssleay() {\n  local SUDO; SUDO=\"$(need_sudo)\"\n  local PKG_MGR FAMILY; read -r PKG_MGR FAMILY < <(detect_pkg_env)\n\n  case \"$FAMILY\" in\n    deb)\n      $SUDO apt update\n      $SUDO apt install -y libnet-ssleay-perl libio-socket-ssl-perl\n      ;;\n    rhel)\n      if [ \"$PKG_MGR\" = \"dnf\" ]; then\n        $SUDO dnf install -y perl-Net-SSLeay perl-IO-Socket-SSL\n      else\n        $SUDO yum install -y perl-Net-SSLeay perl-IO-Socket-SSL\n      fi\n      ;;\n    alpine)\n      # Package names can vary by repo; try common ones:\n      $SUDO apk add --no-cache perl-net-ssleay perl-io-socket-ssl || {\n        echo \"Falling back to cpan for Alpine ...\" >&2\n        $SUDO apk add --no-cache perl make gcc g++ openssl-dev perl-dev\n        cpan -T -i Net::SSLeay IO::Socket::SSL\n      }\n      ;;\n    mac)\n      if ! command -v brew >/dev/null 2>&1; then\n        echo \"Homebrew not found. Install it from https://brew.sh and re-run.\" >&2\n        return 1\n      fi\n      # Try system Perl via CPAN (often the most reliable for these modules)\n      # Ensure Perl available (macOS has one), but we also prepare cpanminus if present\n      if command -v cpanm >/dev/null 2>&1; then\n        cpanm --notest Net::SSLeay IO::Socket::SSL\n      else\n        # cpan will ask first-time config; user interaction may be required\n        cpan -T -i Net::SSLeay IO::Socket::SSL\n      fi\n      ;;\n    *)\n      echo \"Unsupported OS for auto-install of Net::SSLeay. Please install it manually.\" >&2\n      return 1\n      ;;\n  esac\n}\n\n# Checkers\nhave_swaks() { command -v swaks >/dev/null 2>&1; }\nhave_net_ssleay() { perl -MNet::SSLeay -e 'print $Net::SSLeay::VERSION' >/dev/null 2>&1; }\n\nif ! have_swaks; then\n  echo \"swaks not found.\"\n  prompt_yesno INSTALL_SWAKS \"Install swaks now?\" y\n  if [ \"$INSTALL_SWAKS\" = true ]; then\n    install_swaks || { echo \"Failed to install swaks.\" >&2; exit 2; }\n  else\n    echo \"Cannot proceed without swaks.\" >&2\n    exit 2\n  fi\nfi\n\n# Check Net::SSLeay now; if missing and user selects TLS later, we'll re-check and offer install again.\nif ! have_net_ssleay; then\n  echo \"Perl module Net::SSLeay not found (required for TLS).\"\n  prompt_yesno INSTALL_SSL \"Install Net::SSLeay (and IO::Socket::SSL) now?\" y\n  if [ \"$INSTALL_SSL\" = true ]; then\n    install_net_ssleay || echo \"Warning: failed to install Net::SSLeay. You can still use 'None' security.\"\n  fi\nfi\n\necho \"=== SMTP interactive swaks wrapper ===\"\n\nDEFAULT_HOST=\"smtp.office365.com\"\nDEFAULT_PORT=\"587\"\nDEFAULT_AUTH_METHOD=\"LOGIN\"  # LOGIN, PLAIN, CRAM-MD5\n\nprompt_default HOST \"SMTP server\" \"$DEFAULT_HOST\"\nprompt_default PORT \"Port\" \"$DEFAULT_PORT\"\n\necho \"Choose security mode:\"\necho \"  1) STARTTLS (recommended for port 587)\"\necho \"  2) SMTPS (implicit TLS, typical port 465)\"\necho \"  3) None (plain, dev only)\"\nread -r -p \"Select 1,2,3 [1]: \" sec_choice\nsec_choice=${sec_choice:-1}\ncase \"$sec_choice\" in\n  1) SECURITY=\"starttls\" ;;\n  2) SECURITY=\"smtps\" ;;\n  3) SECURITY=\"none\" ;;\n  *) SECURITY=\"starttls\" ;;\nesac\n\n# If TLS was chosen, ensure Net::SSLeay is present (offer install if still missing)\nif [[ \"$SECURITY\" != \"none\" ]] && ! have_net_ssleay; then\n  echo \"TLS selected but Net::SSLeay is missing.\"\n  prompt_yesno INSTALL_SSL2 \"Install Net::SSLeay (and IO::Socket::SSL) now?\" y\n  if [ \"$INSTALL_SSL2\" = true ]; then\n    install_net_ssleay || { echo \"Failed to install Net::SSLeay; cannot proceed with TLS.\" >&2; exit 3; }\n  else\n    echo \"Cannot proceed with TLS/SMTPS without Net::SSLeay. Choose 'None' or re-run.\" >&2\n    exit 3\n  fi\nfi\n\nprompt_yesno USE_AUTH \"Use SMTP authentication?\" y\n\nif [ \"$USE_AUTH\" = true ]; then\n  read -r -p \"Auth method (LOGIN/PLAIN/CRAM-MD5) [${DEFAULT_AUTH_METHOD}]: \" AUTH_METHOD\n  AUTH_METHOD=${AUTH_METHOD:-$DEFAULT_AUTH_METHOD}\n  read -r -p \"Username (user@domain): \" USERNAME\n  if [ -t 0 ]; then\n    read -r -s -p \"Password: \" PASSWORD; echo\n  else\n    PASSWORD=\"\"\n  fi\nfi\n\nprompt_default FROM \"From address\" \"${USERNAME:-noreply@contoso.com}\"\nprompt_default TO \"To address\" \"${FROM:-your.email@contoso.com}\"\nprompt_default SUBJECT \"Subject base text\" \"swaks SMTP test\"\n\necho \"Enter message body \u2014 finish with Ctrl-D on an empty line:\"\nBODY=$(cat)  # Ctrl-D to end; empty -> default below\n\nDATE_STR=$(LC_TIME=C date +\"%a, %d %b %Y %T %z\")\nFINAL_SUBJECT=\"${SUBJECT} ${DATE_STR}\"\n\nargs=()\nargs+=(--to \"$TO\")\nargs+=(--from \"$FROM\")\nargs+=(--server \"$HOST\")\nargs+=(--port \"$PORT\")\n\ncase \"$SECURITY\" in\n  starttls) args+=(--tls) ;;\n  smtps)    args+=(--smtps) ;;\n  none)     : ;;\nesac\n\nif [ \"$USE_AUTH\" = true ]; then\n  args+=(--auth \"$AUTH_METHOD\")\n  args+=(--auth-user \"$USERNAME\")\n  if [ -z \"${PASSWORD:-}\" ] && [ -t 0 ]; then\n    read -r -s -p \"Password (again): \" PASSWORD; echo\n  fi\n  args+=(--auth-password \"$PASSWORD\")\nfi\n\nargs+=(--header \"Subject: $FINAL_SUBJECT\")\n\nif [ -z \"$BODY\" ]; then\n  BODY=\"Hello from swaks wrapper at $(date -u +\"%Y-%m-%dT%H:%M:%SZ\")\"\nfi\nargs+=(--body \"$BODY\")\n\necho\necho \"=== Summary ===\"\necho \"Server: $HOST:$PORT\"\necho \"Security: $SECURITY\"\nif [ \"$USE_AUTH\" = true ]; then\n  echo \"Auth: yes (method: $AUTH_METHOD, user: $USERNAME)\"\n  echo \"Password: ******** (hidden)\"\nelse\n  echo \"Auth: no\"\nfi\necho \"From: $FROM\"\necho \"To: $TO\"\necho \"Subject: $FINAL_SUBJECT\"\necho \"Body length: ${#BODY} bytes\"\necho \"================\"\necho\n\nprompt_yesno CONFIRM \"Run swaks now?\" y\nif [ \"$CONFIRM\" != true ]; then\n  echo \"Aborted by user.\"\n  exit 0\nfi\n\necho \"Running swaks ...\"\nexec swaks \"${args[@]}\"\n",
+      "encoding": "utf-8"
+    }
+  },
+  "public": true,
+  "created_at": "2025-10-28T15:52:04Z",
+  "updated_at": "2025-10-28T15:59:08Z",
+  "description": "SMTP interactive tester wrapper for swaks (https://jetmore.org/john/code/swaks/)",
+  "comments": 0,
+  "user": null,
+  "comments_enabled": true,
+  "comments_url": "https://api.github.com/gists/89a8520d1117114faaa1268f0c8f8740/comments",
+  "owner": {
+    "login": "gioxx",
+    "id": 1768601,
+    "node_id": "MDQ6VXNlcjE3Njg2MDE=",
+    "avatar_url": "https://avatars.githubusercontent.com/u/1768601?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/gioxx",
+    "html_url": "https://github.com/gioxx",
+    "followers_url": "https://api.github.com/users/gioxx/followers",
+    "following_url": "https://api.github.com/users/gioxx/following{/other_user}",
+    "gists_url": "https://api.github.com/users/gioxx/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/gioxx/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/gioxx/subscriptions",
+    "organizations_url": "https://api.github.com/users/gioxx/orgs",
+    "repos_url": "https://api.github.com/users/gioxx/repos",
+    "events_url": "https://api.github.com/users/gioxx/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/gioxx/received_events",
+    "type": "User",
+    "user_view_type": "public",
+    "site_admin": false
+  },
+  "forks": [],
+  "history": [
+    {
+      "user": {
+        "login": "gioxx",
+        "id": 1768601,
+        "node_id": "MDQ6VXNlcjE3Njg2MDE=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/1768601?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/gioxx",
+        "html_url": "https://github.com/gioxx",
+        "followers_url": "https://api.github.com/users/gioxx/followers",
+        "following_url": "https://api.github.com/users/gioxx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/gioxx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/gioxx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/gioxx/subscriptions",
+        "organizations_url": "https://api.github.com/users/gioxx/orgs",
+        "repos_url": "https://api.github.com/users/gioxx/repos",
+        "events_url": "https://api.github.com/users/gioxx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/gioxx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "version": "aceea253f79390f18ec7637303f4156cb052d0da",
+      "committed_at": "2025-10-28T15:59:08Z",
+      "change_status": {
+        "total": 1,
+        "additions": 0,
+        "deletions": 1
+      },
+      "url": "https://api.github.com/gists/89a8520d1117114faaa1268f0c8f8740/aceea253f79390f18ec7637303f4156cb052d0da"
+    },
+    {
+      "user": {
+        "login": "gioxx",
+        "id": 1768601,
+        "node_id": "MDQ6VXNlcjE3Njg2MDE=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/1768601?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/gioxx",
+        "html_url": "https://github.com/gioxx",
+        "followers_url": "https://api.github.com/users/gioxx/followers",
+        "following_url": "https://api.github.com/users/gioxx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/gioxx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/gioxx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/gioxx/subscriptions",
+        "organizations_url": "https://api.github.com/users/gioxx/orgs",
+        "repos_url": "https://api.github.com/users/gioxx/repos",
+        "events_url": "https://api.github.com/users/gioxx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/gioxx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "version": "dcbfd190b28158b0a6a8289b90035592fc457ad2",
+      "committed_at": "2025-10-28T15:52:04Z",
+      "change_status": {
+        "total": 319,
+        "additions": 319,
+        "deletions": 0
+      },
+      "url": "https://api.github.com/gists/89a8520d1117114faaa1268f0c8f8740/dcbfd190b28158b0a6a8289b90035592fc457ad2"
+    }
+  ],
+  "truncated": false
+}
