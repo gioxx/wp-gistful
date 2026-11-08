@@ -96,7 +96,10 @@ final class Embed {
 			wp_enqueue_style( self::STYLE_HANDLE );
 		}
 
-		return (string) apply_filters( 'gistful_html', $html, $url, $attr, $post_id );
+		$html = (string) apply_filters( 'gistful_html', $html, $url, $attr, $post_id );
+
+		// Inside the_content, keep the markup away from wptexturize/wpautop.
+		return Placeholders::protect( $html );
 	}
 
 	/**
