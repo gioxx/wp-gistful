@@ -31,13 +31,13 @@ final class Source {
 
 		$url     = 'https://gist.github.com/' . rawurlencode( $id ) . '.json';
 		$url    .= '' !== $file ? '?file=' . rawurlencode( $file ) : '';
-		$primary = self::request( $url, array() );
+		$primary = self::primary_request( $url );
 		$data    = self::decode( $primary );
 
 		if ( is_array( $data ) && isset( $data['div'], $data['files'] ) && is_string( $data['div'] ) && '' !== $data['div'] && is_array( $data['files'] ) ) {
 			return new Gist_Payload( $data['div'], self::names( $data['files'] ), 'json' );
 		}
-		$outcomes[] = self::classify( $primary, $data );
+		$outcomes[] = self::classify( $primary, $data, true );
 
 		$api     = self::request( 'https://api.github.com/gists/' . rawurlencode( $id ), self::api_headers() );
 		$data    = self::decode( $api );
@@ -46,7 +46,7 @@ final class Source {
 		if ( $payload ) {
 			return $payload;
 		}
-		$outcome = self::classify( $api, $data );
+		$outcome = self::classify( $api, $data, false );
 		if ( 'ok' === $outcome ) {
 			// 200 and valid JSON, but the requested file is not in the gist.
 			$outcome = 'file_missing';
@@ -70,7 +70,7 @@ final class Source {
 	 * @return string[]
 	 */
 	public static function fetch_file_names( string $id ): array {
-		$data = self::decode( self::request( 'https://gist.github.com/' . rawurlencode( $id ) . '.json', array() ) );
+		$data = self::decode( self::primary_request( 'https://gist.github.com/' . rawurlencode( $id ) . '.json' ) );
 		if ( is_array( $data ) && isset( $data['files'] ) && is_array( $data['files'] ) && array() !== $data['files'] ) {
 			return self::names( $data['files'] );
 		}
@@ -112,7 +112,28 @@ final class Source {
 	}
 
 	/**
-	 * Perform a safe GET.
+	 * GET from gist.github.com, following at most one redirect to https://gist.github.com/.
+	 *
+	 * @param string $url URL.
+	 * @return array|\WP_Error
+	 */
+	private static function primary_request( string $url ) {
+		$response = self::request( $url, array() );
+		if ( is_wp_error( $response ) || ! in_array( (int) wp_remote_retrieve_response_code( $response ), array( 301, 302 ), true ) ) {
+			return $response;
+		}
+
+		$location = wp_remote_retrieve_header( $response, 'location' );
+		$parts    = is_string( $location ) ? wp_parse_url( $location ) : false;
+		if ( ! is_array( $parts ) || 'https' !== ( $parts['scheme'] ?? '' ) || 'gist.github.com' !== ( $parts['host'] ?? '' ) || isset( $parts['user'] ) || isset( $parts['port'] ) ) {
+			return $response; // Unusable (not 200): caller falls back to the API.
+		}
+
+		return self::request( $location, array() );
+	}
+
+	/**
+	 * Perform a safe GET (never follows redirects on its own).
 	 *
 	 * @param string               $url     URL.
 	 * @param array<string,string> $headers Extra headers.
@@ -123,6 +144,7 @@ final class Source {
 			$url,
 			array(
 				'timeout'             => 5,
+				'redirection'         => 0,
 				'sslverify'           => true,
 				'limit_response_size' => self::MAX_BYTES,
 				'user-agent'          => 'Gistful/' . GISTFUL_VERSION . '; ' . home_url(),
@@ -155,9 +177,10 @@ final class Source {
 	 *
 	 * @param array|\WP_Error $response Response.
 	 * @param array|null      $data     Decoded body.
-	 * @return string 'http', 'not_found', 'bad_body' or 'ok' (valid JSON, unusable only for lack of the requested file).
+	 * @param bool            $primary  Whether this is the primary leg (a 200 that failed validation is then always a bad body).
+	 * @return string 'http', 'not_found', 'bad_body' or 'ok' (API leg: valid JSON, unusable only for lack of the requested file).
 	 */
-	private static function classify( $response, ?array $data ): string {
+	private static function classify( $response, ?array $data, bool $primary ): string {
 		if ( is_wp_error( $response ) ) {
 			return 'http';
 		}
@@ -169,7 +192,7 @@ final class Source {
 			return 'http';
 		}
 
-		return null === $data || ! isset( $data['files'] ) ? 'bad_body' : 'ok';
+		return $primary || null === $data || ! isset( $data['files'] ) ? 'bad_body' : 'ok';
 	}
 
 	/**

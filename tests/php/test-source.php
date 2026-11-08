@@ -46,21 +46,48 @@ class Test_Source extends Gistful_Test_Case {
 			'url'  => $url,
 			'args' => $args,
 		);
-		$host = wp_parse_url( $url, PHP_URL_HOST );
+		$host  = wp_parse_url( $url, PHP_URL_HOST );
+		$route = $this->routes[ $host ] ?? new WP_Error( 'unmocked', 'No mock for ' . $host );
+		if ( is_array( $route ) && isset( $route['seq'] ) ) {
+			$route = count( $route['seq'] ) > 1 ? array_shift( $this->routes[ $host ]['seq'] ) : $route['seq'][0];
+		}
 
-		return $this->routes[ $host ] ?? new WP_Error( 'unmocked', 'No mock for ' . $host );
+		return $route;
 	}
 
 	/**
-	 * Mock a host's response ($body may be a WP_Error).
+	 * Mock a host's response.
 	 *
-	 * @param string          $host Host.
-	 * @param int|WP_Error    $code Status code or error.
-	 * @param string          $body Body.
+	 * @param string       $host    Host.
+	 * @param int|WP_Error $code    Status code, or a WP_Error to simulate a transport failure.
+	 * @param string       $body    Body.
+	 * @param array        $headers Response headers.
 	 */
-	private function mock( string $host, $code, string $body = '' ) {
-		$this->routes[ $host ] = is_wp_error( $code ) ? $code : array(
-			'headers'  => array(),
+	private function mock( string $host, $code, string $body = '', array $headers = array() ) {
+		$this->routes[ $host ] = $this->response( $code, $body, $headers );
+	}
+
+	/**
+	 * Mock a sequence of responses for a host (the last one repeats).
+	 *
+	 * @param string $host      Host.
+	 * @param array  $responses List of responses built with response().
+	 */
+	private function mock_seq( string $host, array $responses ) {
+		$this->routes[ $host ] = array( 'seq' => $responses );
+	}
+
+	/**
+	 * Build a response.
+	 *
+	 * @param int|WP_Error $code    Status code or error.
+	 * @param string       $body    Body.
+	 * @param array        $headers Headers.
+	 * @return array|WP_Error
+	 */
+	private function response( $code, string $body = '', array $headers = array() ) {
+		return is_wp_error( $code ) ? $code : array(
+			'headers'  => $headers,
 			'body'     => $body,
 			'response' => array(
 				'code'    => $code,
@@ -242,5 +269,89 @@ class Test_Source extends Gistful_Test_Case {
 		$this->mock( 'api.github.com', 200, $this->fixture( 'api-gist.json' ) );
 		Source::fetch( 'abc123' );
 		$this->assertArrayNotHasKey( 'Authorization', $this->calls_to( 'api.github.com' )[0]['args']['headers'] );
+	}
+
+	public function test_primary_redirect_to_gist_host_is_followed_once() {
+		$this->mock_seq(
+			'gist.github.com',
+			array(
+				$this->response( 302, '', array( 'location' => 'https://gist.github.com/owner/abc123.json' ) ),
+				$this->response( 200, $this->fixture( 'json-single.json' ) ),
+			)
+		);
+		$p = Source::fetch( 'abc123' );
+		$this->assertSame( 'json', $p->source );
+		$this->assertSame( 'https://gist.github.com/owner/abc123.json', $this->requests[1]['url'] );
+		$this->assertCount( 2, $this->requests );
+	}
+
+	public function test_primary_second_redirect_is_not_followed() {
+		$this->mock( 'gist.github.com', 302, '', array( 'location' => 'https://gist.github.com/owner/abc123.json' ) );
+		$this->mock( 'api.github.com', 200, $this->fixture( 'api-gist.json' ) );
+		$this->assertSame( 'api', Source::fetch( 'abc123' )->source );
+		$this->assertCount( 3, $this->requests ); // Primary, one hop, API.
+	}
+
+	public function provider_bad_redirects() {
+		return array(
+			'other host'    => array( 'https://evil.example/x.json' ),
+			'http scheme'   => array( 'http://gist.github.com/owner/abc123.json' ),
+			'lookalike'     => array( 'https://gist.github.com.evil.example/x.json' ),
+			'userinfo'      => array( 'https://gist.github.com@evil.example/x.json' ),
+			'missing'       => array( '' ),
+		);
+	}
+
+	/**
+	 * @dataProvider provider_bad_redirects
+	 */
+	public function test_primary_redirect_elsewhere_is_not_requested( $location ) {
+		$this->mock( 'gist.github.com', 302, '', array( 'location' => $location ) );
+		$this->mock( 'evil.example', 200, $this->fixture( 'json-single.json' ) );
+		$this->mock( 'api.github.com', 200, $this->fixture( 'api-gist.json' ) );
+		$this->assertSame( 'api', Source::fetch( 'abc123' )->source );
+		$this->assertCount( 0, $this->calls_to( 'evil.example' ) );
+		$this->assertCount( 0, $this->calls_to( 'gist.github.com.evil.example' ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_api_redirect_is_not_followed_and_token_stays_on_api() {
+		define( 'GISTFUL_GITHUB_TOKEN', 't0k' );
+		$this->mock( 'gist.github.com', 500, '' );
+		$this->mock( 'api.github.com', 302, '', array( 'location' => 'https://evil.example/x' ) );
+		$this->mock( 'evil.example', 200, $this->fixture( 'api-gist.json' ) );
+		$this->assertTrue( is_wp_error( Source::fetch( 'abc123' ) ) );
+		$this->assertCount( 0, $this->calls_to( 'evil.example' ) );
+		foreach ( $this->requests as $r ) {
+			if ( 'api.github.com' !== wp_parse_url( $r['url'], PHP_URL_HOST ) ) {
+				$this->assertArrayNotHasKey( 'Authorization', $r['args']['headers'] );
+			}
+		}
+	}
+
+	public function test_all_requests_disable_redirection() {
+		$this->mock_seq(
+			'gist.github.com',
+			array(
+				$this->response( 302, '', array( 'location' => 'https://gist.github.com/owner/abc123.json' ) ),
+				$this->response( 500, '' ),
+			)
+		);
+		$this->mock( 'api.github.com', 200, $this->fixture( 'api-gist.json' ) );
+		Source::fetch( 'abc123' );
+		Source::fetch_file_names( 'abc123' );
+		$this->assertGreaterThanOrEqual( 3, count( $this->requests ) );
+		foreach ( $this->requests as $r ) {
+			$this->assertSame( 0, $r['args']['redirection'] );
+		}
+	}
+
+	public function test_primary_200_files_without_div_then_api_5xx_is_bad_body() {
+		$this->mock( 'gist.github.com', 200, '{"files":["a.php"]}' );
+		$this->mock( 'api.github.com', 500, '' );
+		$this->assertSame( 'gistful_bad_body', Source::fetch( 'abc123' )->get_error_code() );
 	}
 }
