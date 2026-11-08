@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Plugins screen: "View on GitHub" (when the row does not already link to the repository) and "More plugins by Gioxx" links under the plugin description.
+
 ## 0.1.0 - 2026-11-08
 
 Initial release.

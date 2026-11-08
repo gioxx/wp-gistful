@@ -182,4 +182,19 @@ class Test_Settings_Page extends Gistful_Test_Case {
 		$this->assertFileExists( GISTFUL_DIR . 'assets/css/admin.css' );
 		$this->assertFileExists( GISTFUL_DIR . 'assets/images/gioxx-plugins.svg' );
 	}
+
+	public function test_plugin_row_meta_links() {
+		$file  = plugin_basename( GISTFUL_FILE );
+		$links = \Gistful\Admin\Footer::row_meta( array( '<a href="https://example.org">Visit plugin site</a>' ), $file );
+		$this->assertCount( 3, $links );
+		$this->assertStringContainsString( 'https://github.com/gioxx/wp-gistful', $links[1] );
+		$this->assertStringContainsString( 'https://wordpress.gioxx.org/', $links[2] );
+
+		// The GitHub link is not repeated when the row already has it (Plugin URI).
+		$links = \Gistful\Admin\Footer::row_meta( array( '<a href="https://github.com/gioxx/wp-gistful">Visit plugin site</a>' ), $file );
+		$this->assertCount( 2, $links );
+
+		// Other plugins' rows are left alone.
+		$this->assertSame( array( 'x' ), \Gistful\Admin\Footer::row_meta( array( 'x' ), 'akismet/akismet.php' ) );
+	}
 }
