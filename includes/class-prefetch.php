@@ -27,6 +27,9 @@ final class Prefetch {
 	 * @return void
 	 */
 	public static function on_save( int $post_id, \WP_Post $post ): void {
+		if ( defined( 'WP_IMPORTING' ) && WP_IMPORTING ) {
+			return;
+		}
 		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || 'auto-draft' === $post->post_status ) {
 			return;
 		}
@@ -36,14 +39,21 @@ final class Prefetch {
 		if ( ! in_array( $post->post_status, array( 'publish', 'future' ), true ) ) {
 			return;
 		}
+		if ( 'wp_block' !== $post->post_type && ! is_post_type_viewable( $post->post_type ) ) {
+			return;
+		}
 
+		/**
+		 * Internal, for tests only: total seconds budget for save-time remote calls.
+		 * Not part of the public API.
+		 */
 		$budget  = (float) apply_filters( 'gistful_prefetch_budget', self::BUDGET );
 		$started = microtime( true );
 		foreach ( self::find_gists( $post->post_content ) as $raw_attr ) {
 			if ( microtime( true ) - $started >= $budget ) {
 				break;
 			}
-			self::prefetch( $post_id, $raw_attr );
+			self::prefetch( $post_id, self::resolve_file( $raw_attr ) );
 		}
 	}
 
@@ -62,11 +72,14 @@ final class Prefetch {
 		$raw_key = Cache::raw_key( $attr['id'], $attr['file'] );
 		Cache::track( $post_id, Cache::html_key( $attr ), $raw_key );
 
-		$payload = Source::fetch( $attr['id'], $attr['file'] );
-		if ( is_wp_error( $payload ) ) {
-			return;
+		$payload = Backup::unpack( Cache::get( $raw_key ), 'json' );
+		if ( ! $payload ) {
+			$payload = Source::fetch( $attr['id'], $attr['file'] );
+			if ( is_wp_error( $payload ) ) {
+				return;
+			}
+			Cache::set( $raw_key, Backup::pack( $payload ) );
 		}
-		Cache::set( $raw_key, Backup::pack( $payload ) );
 		Backup::maybe_store( $post_id, $attr['id'], $attr['file'], $payload );
 	}
 
@@ -80,7 +93,7 @@ final class Prefetch {
 		$found = array();
 
 		// Own-line URLs, as WP autoembed (optionally wrapped in a paragraph).
-		if ( preg_match_all( '#^\s*(?:<p>)?\s*(https?://[^\s"<]+)\s*(?:</p>)?\s*$#im', $content, $m ) ) {
+		if ( preg_match_all( '#^\s*(?:<p(?: [^>]*)?>)?\s*(https?://[^\s"<]+)\s*(?:</p>)?\s*$#im', $content, $m ) ) {
 			foreach ( $m[1] as $url ) {
 				$found[] = self::attrs_from_url( $url );
 			}
@@ -106,7 +119,7 @@ final class Prefetch {
 		foreach ( $found as $raw_attr ) {
 			$attr = Attributes::normalize( $raw_attr );
 			if ( '' !== $attr['id'] ) {
-				$unique[ md5( (string) wp_json_encode( $attr ) ) ] = $raw_attr;
+				$unique[ md5( wp_json_encode( $attr ) . ( $raw_attr['_anchor'] ?? '' ) ) ] = $raw_attr;
 			}
 		}
 
@@ -124,17 +137,35 @@ final class Prefetch {
 		if ( null === $parsed ) {
 			return array();
 		}
-		$file = '';
-		if ( '' !== $parsed['anchor'] ) {
-			$names = '-' === $parsed['delimiter'] ? Embed::file_names( $parsed['id'] ) : array();
-			$file  = Gist_Url::resolve_file( $parsed['anchor'], $parsed['delimiter'], $names );
-		}
-
-		return array(
+		$attrs = array(
 			'id'     => $parsed['id'],
-			'file'   => $file,
+			'file'   => '',
 			'oembed' => true,
 		);
+		if ( '_' === $parsed['delimiter'] ) {
+			$attrs['file'] = $parsed['anchor'];
+		} elseif ( '-' === $parsed['delimiter'] ) {
+			// Resolved lazily (needs a remote call), inside the time budget.
+			$attrs['_anchor'] = $parsed['anchor'];
+		}
+
+		return $attrs;
+	}
+
+	/**
+	 * Resolve a pending '-' file anchor (remote call), then drop the marker.
+	 *
+	 * @param array<string, mixed> $raw_attr Raw attributes.
+	 * @return array<string, mixed>
+	 */
+	private static function resolve_file( array $raw_attr ): array {
+		if ( isset( $raw_attr['_anchor'] ) ) {
+			$id               = (string) $raw_attr['id'];
+			$raw_attr['file'] = Gist_Url::resolve_file( (string) $raw_attr['_anchor'], '-', Embed::file_names( $id ) );
+			unset( $raw_attr['_anchor'] );
+		}
+
+		return $raw_attr;
 	}
 
 	/**
