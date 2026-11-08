@@ -42,6 +42,7 @@ final class Plugin {
 		Placeholders::register();
 		Legacy_Hooks::register();
 		Admin\Settings_Page::register();
+		Admin\Footer::register();
 		Admin\Migration_Controller::register();
 		Admin\Migration_Page::register();
 	}

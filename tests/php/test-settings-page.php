@@ -162,6 +162,22 @@ class Test_Settings_Page extends Gistful_Test_Case {
 			$this->assertStringContainsString( 'href="https://github.com/gioxx/wp-gistful"', $html );
 			$this->assertStringContainsString( 'gistful-trademark-notice', $html );
 			$this->assertStringNotContainsString( 'go.gioxx.org', $html );
+			$this->assertStringNotContainsString( 'style=', $html, 'Styles belong in admin.css.' );
+			$this->assertStringContainsString( 'class="gistful-more-plugins"', $html );
+			$this->assertStringContainsString( 'href="https://wordpress.gioxx.org/"', $html );
+			$this->assertStringContainsString( 'src="' . GISTFUL_URL . 'assets/images/gioxx-wordpress.svg"', $html );
 		}
+	}
+
+	public function test_admin_css_loads_on_gistful_pages_only() {
+		\Gistful\Admin\Footer::enqueue( 'index.php' );
+		$this->assertFalse( wp_style_is( 'gistful-admin', 'enqueued' ) );
+		foreach ( array( 'settings_page_gistful', 'tools_page_gistful-migration' ) as $hook ) {
+			wp_dequeue_style( 'gistful-admin' );
+			\Gistful\Admin\Footer::enqueue( $hook );
+			$this->assertTrue( wp_style_is( 'gistful-admin', 'enqueued' ), $hook );
+		}
+		$this->assertFileExists( GISTFUL_DIR . 'assets/css/admin.css' );
+		$this->assertFileExists( GISTFUL_DIR . 'assets/images/gioxx-wordpress.svg' );
 	}
 }

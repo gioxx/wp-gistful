@@ -245,7 +245,7 @@ final class Settings_Page {
 			</form>
 
 			<h2><?php echo esc_html__( 'Status', 'gistful' ); ?></h2>
-			<table class="widefat striped" style="max-width:600px">
+			<table class="widefat striped gistful-status">
 				<tbody>
 				<?php foreach ( self::status_rows() as $row ) : ?>
 					<tr><th scope="row"><?php echo esc_html( $row['label'] ); ?></th><td><?php echo esc_html( $row['value'] ); ?></td></tr>
