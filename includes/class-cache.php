@@ -20,6 +20,7 @@ final class Cache {
 	const PREFIX       = 'gistful_';
 	const NEGATIVE_TTL = 600;
 	const META_KEYS    = '_gistful_keys';
+	const META_GEN     = '_gistful_keys_gen';
 	const GENERATION   = 'gistful_cache_gen';
 
 	/**
@@ -122,11 +123,18 @@ final class Cache {
 	 * @return void
 	 */
 	public static function track( int $post_id, string ...$keys ): void {
-		$known  = get_post_meta( $post_id, self::META_KEYS, true );
-		$known  = is_array( $known ) ? $known : array();
+		$gen   = self::generation();
+		$known = get_post_meta( $post_id, self::META_KEYS, true );
+		$known = is_array( $known ) ? $known : array();
+		if ( array() !== $known && (int) get_post_meta( $post_id, self::META_GEN, true ) !== $gen ) {
+			// Keys of an older generation are unreachable: drop them instead of growing the list.
+			$known = array();
+			delete_post_meta( $post_id, self::META_KEYS );
+		}
 		$merged = array_values( array_unique( array_merge( $known, $keys ) ) );
 		if ( $merged !== $known ) {
 			update_post_meta( $post_id, self::META_KEYS, $merged );
+			update_post_meta( $post_id, self::META_GEN, $gen );
 		}
 	}
 
@@ -147,6 +155,7 @@ final class Cache {
 			}
 		}
 		delete_post_meta( $post_id, self::META_KEYS );
+		delete_post_meta( $post_id, self::META_GEN );
 	}
 
 	/**

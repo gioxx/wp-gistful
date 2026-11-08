@@ -19,6 +19,17 @@ class Test_Conflicts extends Gistful_Test_Case {
 		remove_shortcode( 'gist' );
 	}
 
+	/**
+	 * Log in an administrator; on multisite, activate_plugins needs a super admin.
+	 */
+	private function login_admin() {
+		$user = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		if ( is_multisite() ) {
+			grant_super_admin( $user );
+		}
+		wp_set_current_user( $user );
+	}
+
 	public function test_no_conflict_when_nothing_owns_gist() {
 		if ( class_exists( 'GistPress' ) || class_exists( 'Jetpack' ) ) {
 			$this->markTestSkipped( 'Stub class leaked into this process.' );
@@ -82,7 +93,7 @@ class Test_Conflicts extends Gistful_Test_Case {
 	}
 
 	public function test_deactivate_requires_nonce() {
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->login_admin();
 		$this->expectException( WPDieException::class );
 		Conflicts::handle_deactivate();
 	}
@@ -95,7 +106,7 @@ class Test_Conflicts extends Gistful_Test_Case {
 	}
 
 	public function test_deactivate_runs_and_redirects() {
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->login_admin();
 		$_REQUEST['_wpnonce']    = wp_create_nonce( 'gistful_deactivate_gistpress' );
 		$_POST['_wpnonce']       = $_REQUEST['_wpnonce'];
 		$_SERVER['HTTP_REFERER'] = admin_url( 'plugins.php' );
@@ -123,7 +134,7 @@ class Test_Conflicts extends Gistful_Test_Case {
 		Conflicts::render_notice();
 		$this->assertSame( '', ob_get_clean() );
 
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->login_admin();
 		ob_start();
 		Conflicts::render_notice();
 		$html = ob_get_clean();
@@ -142,7 +153,7 @@ class Test_Conflicts extends Gistful_Test_Case {
 	}
 
 	private function prepare_post(): void {
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->login_admin();
 		$_REQUEST['_wpnonce']    = wp_create_nonce( 'gistful_deactivate_gistpress' );
 		$_POST['_wpnonce']       = $_REQUEST['_wpnonce'];
 		$_SERVER['HTTP_REFERER'] = admin_url( 'plugins.php' );
@@ -176,10 +187,11 @@ class Test_Conflicts extends Gistful_Test_Case {
 	}
 
 	public function test_deactivation_mode_decision() {
+		// A site administrator who is not a super admin.
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 		$this->assertSame( 'site', Conflicts::deactivation_mode( 'gistpress/gistpress.php' ) );
 		if ( ! is_multisite() ) {
-			return; // Network-active branches only run with WP_TESTS_MULTISITE.
+			return; // Network-active branches only run with WP_MULTISITE=1.
 		}
 		update_site_option( 'active_sitewide_plugins', array( 'gistpress/gistpress.php' => time() ) );
 		$this->assertSame( 'denied', Conflicts::deactivation_mode( 'gistpress/gistpress.php' ) );

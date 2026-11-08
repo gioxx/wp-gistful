@@ -19,7 +19,11 @@ class Test_Migrator extends Gistful_Test_Case {
 	public function set_up() {
 		parent::set_up();
 		$this->set_up_http_mock(); // Unmocked hosts fail: no test touches the network.
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		if ( is_multisite() ) {
+			grant_super_admin( $admin ); // Only super admins have unfiltered_html on multisite.
+		}
+		wp_set_current_user( $admin );
 	}
 
 	/**
@@ -165,6 +169,22 @@ class Test_Migrator extends Gistful_Test_Case {
 		$content = get_post( $post )->post_content;
 		$this->assertStringContainsString( '<!-- wp:gistful/gist {"url":"https://gist.github.com/abc123","lines":"5-"} /-->', $content );
 		$this->assertStringContainsString( '<!-- wp:gistful/gist {"url":"https://gist.github.com/def456","lines":"1-3"} /-->', $content );
+	}
+
+	public function test_convert_refused_without_unfiltered_html() {
+		$content = '<!-- wp:shortcode -->[gist id="abc123"]<!-- /wp:shortcode -->';
+		$post    = self::factory()->post->create( array( 'post_content' => $content ) );
+		$filter  = static function ( $caps, $cap ) {
+			return 'unfiltered_html' === $cap ? array( 'do_not_allow' ) : $caps;
+		};
+		add_filter( 'map_meta_cap', $filter, 10, 2 );
+		$result = Migrator::convert( $post );
+		remove_filter( 'map_meta_cap', $filter, 10 );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'gistful_unfiltered_html', $result->get_error_code() );
+		$this->assertSame( 409, $result->get_error_data()['status'] );
+		$this->assertSame( $content, get_post( $post )->post_content );
 	}
 
 	public function test_convert_skips_classic_posts() {

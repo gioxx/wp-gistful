@@ -394,6 +394,10 @@ final class Migrator {
 		if ( $after === $post->post_content ) {
 			return false;
 		}
+		// wp_update_post() would run kses over the whole post for this user.
+		if ( ! current_user_can( 'unfiltered_html' ) ) {
+			return new \WP_Error( 'gistful_unfiltered_html', __( 'Your account cannot save unfiltered HTML, so converting would alter the rest of the post. Ask an administrator to run the conversion.', 'gistful' ), array( 'status' => 409 ) );
+		}
 
 		$no_revision = new \WP_Error( 'gistful_no_revision', __( 'Revisions are disabled for this post, so it was not converted.', 'gistful' ), array( 'status' => 409 ) );
 		// With a keep limit of 1, the revision made by wp_update_post() would trim the original.

@@ -96,6 +96,18 @@ class Test_Cache_Backup extends Gistful_Test_Case {
 		$this->assertEmpty( get_post_meta( $post, '_gistful_keys', true ) );
 	}
 
+	public function test_track_drops_keys_of_older_generations() {
+		$post = self::factory()->post->create();
+		Cache::track( $post, 'gistful_h_old1', 'gistful_r_old1' );
+		Cache::flush_all();
+		Cache::track( $post, 'gistful_h_new1' );
+		$this->assertSame( array( 'gistful_h_new1' ), get_post_meta( $post, '_gistful_keys', true ) );
+		Cache::track( $post, 'gistful_h_new2' );
+		$this->assertSame( array( 'gistful_h_new1', 'gistful_h_new2' ), get_post_meta( $post, '_gistful_keys', true ) );
+		Cache::flush_post( $post );
+		$this->assertSame( array(), get_post_meta( $post ) ? array_filter( array_keys( get_post_meta( $post ) ), static fn( $k ) => 0 === strpos( $k, '_gistful_keys' ) ) : array() );
+	}
+
 	public function test_flush_all_only_touches_gistful_transients() {
 		Cache::set( 'gistful_h_1', 'a' );
 		set_transient( 'other_plugin', 'keep', 100 );
