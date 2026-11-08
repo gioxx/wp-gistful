@@ -150,4 +150,17 @@ class Test_Settings_Page extends Gistful_Test_Case {
 			$this->assertGreaterThanOrEqual( 3, substr_count( $css, '--gistful-' . $var . ':' ), "$var light/dark/auto" );
 		}
 	}
+
+	public function test_admin_pages_render_the_footer() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		foreach ( array( array( Settings_Page::class, 'render_page' ), array( \Gistful\Admin\Migration_Page::class, 'render_page' ) ) as $page ) {
+			ob_start();
+			call_user_func( $page );
+			$html = (string) ob_get_clean();
+			$this->assertStringContainsString( 'class="gistful-footer"', $html );
+			$this->assertStringContainsString( 'Gioxx, ' . gmdate( 'Y' ), $html );
+			$this->assertStringContainsString( 'href="https://go.gioxx.org/gistful"', $html );
+			$this->assertStringContainsString( 'href="https://github.com/gioxx/wp-gistful"', $html );
+		}
+	}
 }

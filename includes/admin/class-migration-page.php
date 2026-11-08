@@ -131,6 +131,7 @@ final class Migration_Page {
 			<h2><?php echo esc_html__( '4. Convert to blocks', 'gistful' ); ?></h2>
 			<p><?php echo esc_html__( 'Block-editor posts only. Gist embeds and [gist] shortcode blocks become Gistful blocks, one post at a time, after a preview.', 'gistful' ); ?></p>
 			<div id="gistful-convert"></div>
+			<?php Footer::render(); ?>
 		</div>
 		<?php
 	}
