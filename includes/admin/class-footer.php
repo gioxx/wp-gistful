@@ -41,6 +41,27 @@ final class Footer {
 	 */
 	public static function register(): void {
 		add_action( 'admin_enqueue_scripts', array( self::class, 'enqueue' ) );
+		add_filter( 'plugin_row_meta', array( self::class, 'row_meta' ), 10, 2 );
+	}
+
+	/**
+	 * Links under the plugin description on the Plugins screen: the GitHub
+	 * repository (unless the row already links to it) and the author's gallery.
+	 *
+	 * @param mixed  $links Row meta links.
+	 * @param string $file  Plugin basename of the row.
+	 * @return mixed
+	 */
+	public static function row_meta( mixed $links, string $file ): mixed {
+		if ( ! is_array( $links ) || plugin_basename( GISTFUL_FILE ) !== $file ) {
+			return $links;
+		}
+		if ( false === strpos( implode( ' ', $links ), self::GITHUB_URL ) ) {
+			$links[] = '<a href="' . esc_url( self::GITHUB_URL ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'View on GitHub', 'gistful' ) . '</a>';
+		}
+		$links[] = '<a href="' . esc_url( self::GALLERY_URL ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'More plugins by Gioxx', 'gistful' ) . '</a>';
+
+		return $links;
 	}
 
 	/**
