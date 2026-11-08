@@ -74,6 +74,6 @@ final class Settings_Store {
 	public static function update( array $values ): void {
 		$values = array_intersect_key( $values, self::defaults() );
 
-		update_option( self::OPTION, array_merge( self::all(), $values ) );
+		update_option( self::OPTION, array_merge( self::all(), $values ), true );
 	}
 }
