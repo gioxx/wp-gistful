@@ -22,7 +22,7 @@ PHP 8.1+, WordPress 6.5+.
 
 Download the latest release zip and upload it from Plugins → Add New → Upload Plugin, or build it yourself with `bin/package.sh`. If GistPress is active, Gistful takes over its `[gist]` shortcode and pasted URLs; Tools → Gistful Migration imports its backups and cleans up its data.
 
-More plugins by the same author: [wordpress.gioxx.org](https://wordpress.gioxx.org/).
+More plugins by the same author: [wordpress.gxware.org](https://wordpress.gxware.org/).
 
 ## Development
 

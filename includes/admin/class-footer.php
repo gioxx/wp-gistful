@@ -27,7 +27,7 @@ final class Footer {
 	/**
 	 * Gallery of the author's WordPress plugins.
 	 */
-	const GALLERY_URL = 'https://wordpress.gioxx.org/';
+	const GALLERY_URL = 'https://wordpress.gxware.org/';
 
 	/**
 	 * Style handle of the admin pages.

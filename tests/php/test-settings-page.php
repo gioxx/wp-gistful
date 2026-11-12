@@ -166,7 +166,7 @@ class Test_Settings_Page extends Gistful_Test_Case {
 			$this->assertStringContainsString( 'gistful-trademark-notice', $html );
 			$this->assertStringNotContainsString( 'go.gioxx.org', $html );
 			$this->assertStringNotContainsString( 'style=', $html, 'Styles belong in admin.css.' );
-			$this->assertStringContainsString( 'href="https://wordpress.gioxx.org/"', $html );
+			$this->assertStringContainsString( 'href="https://wordpress.gxware.org/"', $html );
 			$this->assertStringContainsString( 'src="' . GISTFUL_URL . 'assets/images/gioxx-plugins.svg"', $html );
 		}
 	}
@@ -188,7 +188,7 @@ class Test_Settings_Page extends Gistful_Test_Case {
 		$links = \Gistful\Admin\Footer::row_meta( array( '<a href="https://example.org">Visit plugin site</a>' ), $file );
 		$this->assertCount( 3, $links );
 		$this->assertStringContainsString( 'https://github.com/gioxx/wp-gistful', $links[1] );
-		$this->assertStringContainsString( 'https://wordpress.gioxx.org/', $links[2] );
+		$this->assertStringContainsString( 'https://wordpress.gxware.org/', $links[2] );
 
 		// The GitHub link is not repeated when the row already has it (Plugin URI).
 		$links = \Gistful\Admin\Footer::row_meta( array( '<a href="https://github.com/gioxx/wp-gistful">Visit plugin site</a>' ), $file );
