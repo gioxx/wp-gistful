@@ -120,7 +120,7 @@ final class Renderer {
 			$html .= '<div class="gist-file"><div class="gist-data"><div class="file"><div class="blob-wrapper data">'
 				. '<table class="highlight tab-size js-file-line-container"><tbody>' . $rows . '</tbody></table>'
 				. '</div></div></div><div class="gist-meta">'
-				. '<a href="' . esc_url( $base . '/raw/' . rawurlencode( $name ) ) . '">' . esc_html__( 'view raw', 'gistful' ) . '</a> '
+				. '<a href="' . esc_url( $base . '/raw/' . rawurlencode( $name ) ) . '">' . esc_html__( 'view raw', 'gistful-for-github' ) . '</a> '
 				. '<a href="' . esc_url( $base ) . '">' . self::text( $name ) . '</a>'
 				. '</div></div>';
 		}
@@ -139,7 +139,7 @@ final class Renderer {
 	public static function unsupported_notice( string $id, string $file ): string {
 		return '<div class="gistful-unsupported"><span class="gistful-unsupported__name">' . esc_html( $file ) . '</span> '
 			. '<a href="' . esc_url( 'https://gist.github.com/' . $id ) . '" target="_blank" rel="noopener noreferrer">'
-			. esc_html__( 'View this file on GitHub', 'gistful' ) . '</a></div>';
+			. esc_html__( 'View this file on GitHub', 'gistful-for-github' ) . '</a></div>';
 	}
 
 	/**
@@ -320,7 +320,7 @@ final class Renderer {
 			}
 			$file  = $xpath->query( 'ancestor::*[' . self::has_class( 'gist-file' ) . '][1]', $area )->item( 0 );
 			$name  = $file ? Sanitizer::file_name( $xpath, $file ) : '';
-			$label = '' !== $name ? $name : __( 'Gist code', 'gistful' );
+			$label = '' !== $name ? $name : __( 'Gist code', 'gistful-for-github' );
 			$area->setAttribute( 'tabindex', '0' );
 			$area->setAttribute( 'role', 'region' );
 			$area->setAttribute( 'aria-label', $label );

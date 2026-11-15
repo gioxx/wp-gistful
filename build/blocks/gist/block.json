@@ -10,7 +10,7 @@
     "github",
     "code"
   ],
-  "textdomain": "gistful",
+  "textdomain": "gistful-for-github",
   "icon": "editor-code",
   "supports": {
     "html": false,

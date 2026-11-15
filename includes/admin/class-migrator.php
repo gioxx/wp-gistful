@@ -212,10 +212,10 @@ final class Migrator {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 		if ( is_plugin_active( Conflicts::gistpress_file() ) ) {
-			return new \WP_Error( 'gistful_gistpress_active', __( 'Deactivate GistPress before cleaning up its data.', 'gistful' ), array( 'status' => 409 ) );
+			return new \WP_Error( 'gistful_gistpress_active', __( 'Deactivate GistPress before cleaning up its data.', 'gistful-for-github' ), array( 'status' => 409 ) );
 		}
 		if ( ! $force && ! self::import_complete() ) {
-			return new \WP_Error( 'gistful_import_pending', __( 'Import the backups first, or confirm that you want to delete them without importing.', 'gistful' ), array( 'status' => 409 ) );
+			return new \WP_Error( 'gistful_import_pending', __( 'Import the backups first, or confirm that you want to delete them without importing.', 'gistful-for-github' ), array( 'status' => 409 ) );
 		}
 
 		$limit     = max( 1, $limit );
@@ -247,7 +247,7 @@ final class Migrator {
 
 		$left = self::count_legacy_meta() + count( self::legacy_transient_names( 1 ) );
 		if ( $left > 0 && 0 === $processed ) {
-			return new \WP_Error( 'gistful_cleanup_stalled', __( 'Cleanup could not delete the remaining GistPress data.', 'gistful' ), array( 'status' => 500 ) );
+			return new \WP_Error( 'gistful_cleanup_stalled', __( 'Cleanup could not delete the remaining GistPress data.', 'gistful-for-github' ), array( 'status' => 500 ) );
 		}
 
 		return array(
@@ -388,7 +388,7 @@ final class Migrator {
 			return false;
 		}
 		if ( null !== $hash && md5( $post->post_content ) !== $hash ) {
-			return new \WP_Error( 'gistful_content_changed', __( 'The post changed since the preview. Preview it again.', 'gistful' ), array( 'status' => 409 ) );
+			return new \WP_Error( 'gistful_content_changed', __( 'The post changed since the preview. Preview it again.', 'gistful-for-github' ), array( 'status' => 409 ) );
 		}
 		$after = self::transform( $post->post_content );
 		if ( $after === $post->post_content ) {
@@ -396,10 +396,10 @@ final class Migrator {
 		}
 		// wp_update_post() would run kses over the whole post for this user.
 		if ( ! current_user_can( 'unfiltered_html' ) ) {
-			return new \WP_Error( 'gistful_unfiltered_html', __( 'Your account cannot save unfiltered HTML, so converting would alter the rest of the post. Ask an administrator to run the conversion.', 'gistful' ), array( 'status' => 409 ) );
+			return new \WP_Error( 'gistful_unfiltered_html', __( 'Your account cannot save unfiltered HTML, so converting would alter the rest of the post. Ask an administrator to run the conversion.', 'gistful-for-github' ), array( 'status' => 409 ) );
 		}
 
-		$no_revision = new \WP_Error( 'gistful_no_revision', __( 'Revisions are disabled for this post, so it was not converted.', 'gistful' ), array( 'status' => 409 ) );
+		$no_revision = new \WP_Error( 'gistful_no_revision', __( 'Revisions are disabled for this post, so it was not converted.', 'gistful-for-github' ), array( 'status' => 409 ) );
 		// With a keep limit of 1, the revision made by wp_update_post() would trim the original.
 		$keep = wp_revisions_to_keep( $post );
 		if ( ! wp_revisions_enabled( $post ) || ( $keep >= 0 && $keep < 2 ) ) {

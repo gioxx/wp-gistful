@@ -80,7 +80,7 @@ final class Conflicts {
 		if ( ! $found && shortcode_exists( 'gist' ) ) {
 			$found[] = array(
 				'slug'        => 'unknown',
-				'name'        => __( 'another plugin or theme', 'gistful' ),
+				'name'        => __( 'another plugin or theme', 'gistful-for-github' ),
 				'plugin_file' => null,
 			);
 		}
@@ -138,13 +138,13 @@ final class Conflicts {
 	 */
 	public static function status(): array {
 		$names = array_map(
-			static fn( array $c ): string => 'unknown' === $c['slug'] ? $c['name'] : sprintf( /* translators: %s: plugin name */ __( '%s (active)', 'gistful' ), $c['name'] ),
+			static fn( array $c ): string => 'unknown' === $c['slug'] ? $c['name'] : sprintf( /* translators: %s: plugin name */ __( '%s (active)', 'gistful-for-github' ), $c['name'] ),
 			self::found()
 		);
 
 		return array(
-			'label' => __( 'Other gist handlers', 'gistful' ),
-			'value' => $names ? implode( ', ', $names ) : __( 'None', 'gistful' ),
+			'label' => __( 'Other gist handlers', 'gistful-for-github' ),
+			'value' => $names ? implode( ', ', $names ) : __( 'None', 'gistful-for-github' ),
 		);
 	}
 
@@ -171,11 +171,11 @@ final class Conflicts {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only display flag.
 		$flag = isset( $_GET['gistful_notice'] ) ? sanitize_key( wp_unslash( $_GET['gistful_notice'] ) ) : '';
 		if ( 'gistpress_deactivated' === $flag ) {
-			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'GistPress has been deactivated. Gistful now handles your gists.', 'gistful' ) . '</p></div>';
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'GistPress has been deactivated. Gistful now handles your gists.', 'gistful-for-github' ) . '</p></div>';
 		}
 
 		if ( 'gistpress_deactivate_failed' === $flag ) {
-			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'GistPress could not be deactivated. Please deactivate it from the Plugins screen.', 'gistful' ) . '</p></div>';
+			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'GistPress could not be deactivated. Please deactivate it from the Plugins screen.', 'gistful-for-github' ) . '</p></div>';
 		}
 
 		if ( ! self::on_notice_screen() ) {
@@ -186,18 +186,18 @@ final class Conflicts {
 			echo esc_html(
 				sprintf(
 					/* translators: %s: name of the other plugin */
-					__( 'Gistful detected %s, which also handles gists. Gistful has taken over gist embeds on this site, so they are rendered by Gistful.', 'gistful' ),
+					__( 'Gistful detected %s, which also handles gists. Gistful has taken over gist embeds on this site, so they are rendered by Gistful.', 'gistful-for-github' ),
 					$conflict['name']
 				)
 			);
 			echo '</p>';
 			if ( 'gistpress' === $conflict['slug'] && 'denied' === self::deactivation_mode( (string) $conflict['plugin_file'] ) ) {
-				echo '<p>' . esc_html__( 'GistPress is network-activated; ask a network administrator to deactivate it.', 'gistful' ) . '</p>';
+				echo '<p>' . esc_html__( 'GistPress is network-activated; ask a network administrator to deactivate it.', 'gistful-for-github' ) . '</p>';
 			} elseif ( 'gistpress' === $conflict['slug'] ) {
 				echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 				echo '<input type="hidden" name="action" value="' . esc_attr( self::ACTION ) . '">';
 				wp_nonce_field( self::ACTION );
-				echo '<p><button type="submit" class="button button-secondary">' . esc_html__( 'Deactivate GistPress', 'gistful' ) . '</button></p>';
+				echo '<p><button type="submit" class="button button-secondary">' . esc_html__( 'Deactivate GistPress', 'gistful-for-github' ) . '</button></p>';
 				echo '</form>';
 			}
 			echo '</div>';
@@ -211,7 +211,7 @@ final class Conflicts {
 	 */
 	public static function handle_deactivate(): void {
 		if ( ! current_user_can( 'activate_plugins' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do this.', 'gistful' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'You do not have permission to do this.', 'gistful-for-github' ), '', array( 'response' => 403 ) );
 		}
 		check_admin_referer( self::ACTION );
 
@@ -221,7 +221,7 @@ final class Conflicts {
 		$file = self::gistpress_file();
 		$mode = self::deactivation_mode( $file );
 		if ( 'denied' === $mode ) {
-			wp_die( esc_html__( 'GistPress is network-activated; ask a network administrator to deactivate it.', 'gistful' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'GistPress is network-activated; ask a network administrator to deactivate it.', 'gistful-for-github' ), '', array( 'response' => 403 ) );
 		}
 		deactivate_plugins( $file, false, 'network' === $mode );
 		$result = is_plugin_active( $file ) ? 'gistpress_deactivate_failed' : 'gistpress_deactivated';

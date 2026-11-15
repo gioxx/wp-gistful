@@ -6,7 +6,7 @@
 	"category": "embed",
 	"description": "Embed a GitHub Gist.",
 	"keywords": [ "gist", "github", "code" ],
-	"textdomain": "gistful",
+	"textdomain": "gistful-for-github",
 	"icon": "editor-code",
 	"supports": { "html": false, "align": [ "wide", "full" ] },
 	"attributes": {

@@ -30,7 +30,7 @@ final class Block {
 		);
 		if ( $type && ! empty( $type->editor_script_handles ) ) {
 			foreach ( $type->editor_script_handles as $handle ) {
-				wp_set_script_translations( $handle, 'gistful' );
+				wp_set_script_translations( $handle, 'gistful-for-github' );
 			}
 		}
 	}

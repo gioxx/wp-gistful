@@ -44,13 +44,13 @@ final class Embed {
 			)
 		);
 		$labels = array(
-			'copy'         => __( 'Copy', 'gistful' ),
-			'copyAll'      => __( 'Copy all', 'gistful' ),
-			'copied'       => __( 'Copied', 'gistful' ),
-			'failed'       => __( 'Copy failed', 'gistful' ),
+			'copy'         => __( 'Copy', 'gistful-for-github' ),
+			'copyAll'      => __( 'Copy all', 'gistful-for-github' ),
+			'copied'       => __( 'Copied', 'gistful-for-github' ),
+			'failed'       => __( 'Copy failed', 'gistful-for-github' ),
 			/* translators: %s: file name */
-			'copyFile'     => __( 'Copy %s', 'gistful' ),
-			'copyAllLabel' => __( 'Copy all files', 'gistful' ),
+			'copyFile'     => __( 'Copy %s', 'gistful-for-github' ),
+			'copyAllLabel' => __( 'Copy all files', 'gistful-for-github' ),
 		);
 		wp_add_inline_script( self::SCRIPT_HANDLE, 'window.gistfulCopy = ' . wp_json_encode( $labels ) . ';', 'before' );
 	}
@@ -83,7 +83,7 @@ final class Embed {
 		$url  = 'https://gist.github.com/' . $id;
 
 		if ( is_feed() ) {
-			$html = '<a href="' . esc_url( $url ) . '">' . esc_html__( 'View this code snippet on GitHub.', 'gistful' ) . '</a>';
+			$html = '<a href="' . esc_url( $url ) . '">' . esc_html__( 'View this code snippet on GitHub.', 'gistful-for-github' ) . '</a>';
 
 			return (string) apply_filters( 'gistful_feed_html', $html, $url, $attr );
 		}

@@ -3,14 +3,14 @@
  * Plugin Name:       Gistful for GitHub
  * Plugin URI:        https://github.com/gioxx/wp-gistful
  * Description:       Embed GitHub Gists in WordPress with a block, a shortcode and oEmbed. Based on GistPress.
- * Version:           0.2.0
+ * Version:           0.2.1
  * Requires at least: 6.5
  * Requires PHP:      8.1
  * Author:            Gioxx
  * Author URI:        https://gioxx.org
  * License:           GPL-3.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-3.0.html
- * Text Domain:       gistful
+ * Text Domain:       gistful-for-github
  *
  * Based on GistPress by Brady Vercher and Gary Jones.
  *
@@ -21,7 +21,7 @@ namespace Gistful;
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'GISTFUL_VERSION', '0.2.0' );
+define( 'GISTFUL_VERSION', '0.2.1' );
 define( 'GISTFUL_FILE', __FILE__ );
 define( 'GISTFUL_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GISTFUL_URL', plugin_dir_url( __FILE__ ) );

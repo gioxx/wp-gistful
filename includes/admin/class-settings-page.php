@@ -52,8 +52,8 @@ final class Settings_Page {
 	 */
 	public static function add_menu(): void {
 		add_options_page(
-			__( 'Gistful for GitHub', 'gistful' ),
-			__( 'Gistful', 'gistful' ),
+			__( 'Gistful for GitHub', 'gistful-for-github' ),
+			__( 'Gistful', 'gistful-for-github' ),
 			'manage_options',
 			self::SLUG,
 			array( self::class, 'render_page' )
@@ -106,7 +106,7 @@ final class Settings_Page {
 	 */
 	public static function handle_clear_cache(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do this.', 'gistful' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'You do not have permission to do this.', 'gistful-for-github' ), '', array( 'response' => 403 ) );
 		}
 		check_admin_referer( self::ACTION );
 
@@ -131,7 +131,7 @@ final class Settings_Page {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only display flag.
 		$notice = isset( $_GET['gistful_notice'] ) ? sanitize_key( wp_unslash( $_GET['gistful_notice'] ) ) : '';
 		if ( 'cache_cleared' === $notice ) {
-			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Gistful cache cleared.', 'gistful' ) . '</p></div>';
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Gistful cache cleared.', 'gistful-for-github' ) . '</p></div>';
 		}
 	}
 
@@ -143,11 +143,11 @@ final class Settings_Page {
 	public static function status_rows(): array {
 		$rows = array(
 			'token'     => array(
-				'label' => __( 'GitHub token configured', 'gistful' ),
+				'label' => __( 'GitHub token configured', 'gistful-for-github' ),
 				'value' => self::yes_no( defined( 'GISTFUL_GITHUB_TOKEN' ) && '' !== (string) GISTFUL_GITHUB_TOKEN ),
 			),
 			'legacy'    => array(
-				'label' => __( 'Legacy GistPress data found', 'gistful' ),
+				'label' => __( 'Legacy GistPress data found', 'gistful-for-github' ),
 				'value' => self::yes_no( self::has_legacy_data() ),
 			),
 			'conflicts' => Conflicts::status(),
@@ -180,7 +180,7 @@ final class Settings_Page {
 	 * @return string
 	 */
 	private static function yes_no( bool $flag ): string {
-		return $flag ? __( 'Yes', 'gistful' ) : __( 'No', 'gistful' );
+		return $flag ? __( 'Yes', 'gistful-for-github' ) : __( 'No', 'gistful-for-github' );
 	}
 
 	/**
@@ -204,55 +204,55 @@ final class Settings_Page {
 		};
 		?>
 		<div class="wrap">
-			<h1><?php echo esc_html__( 'Gistful for GitHub', 'gistful' ); ?></h1>
+			<h1><?php echo esc_html__( 'Gistful for GitHub', 'gistful-for-github' ); ?></h1>
 			<form method="post" action="options.php">
 				<?php settings_fields( 'gistful' ); ?>
 				<table class="form-table" role="presentation">
 					<tr>
-						<th scope="row"><label for="gistful-scheme"><?php echo esc_html__( 'Color scheme', 'gistful' ); ?></label></th>
+						<th scope="row"><label for="gistful-scheme"><?php echo esc_html__( 'Color scheme', 'gistful-for-github' ); ?></label></th>
 						<td>
 							<select id="gistful-scheme" name="<?php echo esc_attr( $name ); ?>[scheme]">
-								<option value="auto" <?php selected( $s['scheme'], 'auto' ); ?>><?php echo esc_html__( 'Automatic', 'gistful' ); ?></option>
-								<option value="light" <?php selected( $s['scheme'], 'light' ); ?>><?php echo esc_html__( 'Always light', 'gistful' ); ?></option>
-								<option value="dark" <?php selected( $s['scheme'], 'dark' ); ?>><?php echo esc_html__( 'Always dark', 'gistful' ); ?></option>
+								<option value="auto" <?php selected( $s['scheme'], 'auto' ); ?>><?php echo esc_html__( 'Automatic', 'gistful-for-github' ); ?></option>
+								<option value="light" <?php selected( $s['scheme'], 'light' ); ?>><?php echo esc_html__( 'Always light', 'gistful-for-github' ); ?></option>
+								<option value="dark" <?php selected( $s['scheme'], 'dark' ); ?>><?php echo esc_html__( 'Always dark', 'gistful-for-github' ); ?></option>
 							</select>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><?php echo esc_html__( 'Load the plugin CSS', 'gistful' ); ?></th>
-						<td><label><?php $tick( 'load_css' ); ?> <?php echo esc_html__( 'Load the Gistful stylesheet on pages that contain a gist', 'gistful' ); ?></label></td>
+						<th scope="row"><?php echo esc_html__( 'Load the plugin CSS', 'gistful-for-github' ); ?></th>
+						<td><label><?php $tick( 'load_css' ); ?> <?php echo esc_html__( 'Load the Gistful stylesheet on pages that contain a gist', 'gistful-for-github' ); ?></label></td>
 					</tr>
 					<tr>
-						<th scope="row"><?php echo esc_html__( 'Line numbers', 'gistful' ); ?></th>
-						<td><label><?php $tick( 'show_line_numbers' ); ?> <?php echo esc_html__( 'Show line numbers by default', 'gistful' ); ?></label></td>
+						<th scope="row"><?php echo esc_html__( 'Line numbers', 'gistful-for-github' ); ?></th>
+						<td><label><?php $tick( 'show_line_numbers' ); ?> <?php echo esc_html__( 'Show line numbers by default', 'gistful-for-github' ); ?></label></td>
 					</tr>
 					<tr>
-						<th scope="row"><?php echo esc_html__( 'Meta bar', 'gistful' ); ?></th>
-						<td><label><?php $tick( 'show_meta' ); ?> <?php echo esc_html__( 'Show the file name and "view raw" bar by default', 'gistful' ); ?></label></td>
+						<th scope="row"><?php echo esc_html__( 'Meta bar', 'gistful-for-github' ); ?></th>
+						<td><label><?php $tick( 'show_meta' ); ?> <?php echo esc_html__( 'Show the file name and "view raw" bar by default', 'gistful-for-github' ); ?></label></td>
 					</tr>
 					<tr>
-						<th scope="row"><?php echo esc_html__( 'Copy button', 'gistful' ); ?></th>
+						<th scope="row"><?php echo esc_html__( 'Copy button', 'gistful-for-github' ); ?></th>
 						<td>
-							<label><?php $tick( 'copy_button' ); ?> <?php echo esc_html__( 'Show a "Copy" button on each file, and "Copy all" on gists with more than one file', 'gistful' ); ?></label>
-							<p class="description"><?php echo esc_html__( 'Adds a small local script to pages that show a gist.', 'gistful' ); ?></p>
+							<label><?php $tick( 'copy_button' ); ?> <?php echo esc_html__( 'Show a "Copy" button on each file, and "Copy all" on gists with more than one file', 'gistful-for-github' ); ?></label>
+							<p class="description"><?php echo esc_html__( 'Adds a small local script to pages that show a gist.', 'gistful-for-github' ); ?></p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="gistful-cache-hours"><?php echo esc_html__( 'Cache duration (hours)', 'gistful' ); ?></label></th>
+						<th scope="row"><label for="gistful-cache-hours"><?php echo esc_html__( 'Cache duration (hours)', 'gistful-for-github' ); ?></label></th>
 						<td><input id="gistful-cache-hours" type="number" min="1" max="168" step="1" class="small-text" name="<?php echo esc_attr( $name ); ?>[cache_hours]" value="<?php echo esc_attr( (string) $s['cache_hours'] ); ?>"></td>
 					</tr>
 				</table>
 				<?php submit_button(); ?>
 			</form>
 
-			<h2><?php echo esc_html__( 'Cache', 'gistful' ); ?></h2>
+			<h2><?php echo esc_html__( 'Cache', 'gistful-for-github' ); ?></h2>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION ); ?>">
 				<?php wp_nonce_field( self::ACTION ); ?>
-				<?php submit_button( __( 'Clear cache', 'gistful' ), 'secondary', 'submit', false ); ?>
+				<?php submit_button( __( 'Clear cache', 'gistful-for-github' ), 'secondary', 'submit', false ); ?>
 			</form>
 
-			<h2><?php echo esc_html__( 'Status', 'gistful' ); ?></h2>
+			<h2><?php echo esc_html__( 'Status', 'gistful-for-github' ); ?></h2>
 			<table class="widefat striped gistful-status">
 				<tbody>
 				<?php foreach ( self::status_rows() as $row ) : ?>
