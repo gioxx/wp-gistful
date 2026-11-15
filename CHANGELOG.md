@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 - 2026-11-15
+
+- Text domain is now `gistful-for-github`, matching the WordPress.org slug, so translations from translate.wordpress.org load.
+
 ## 0.2.0 - 2026-11-08
 
 - Copy buttons: "Copy" on every code and CSV file and "Copy all" on gists with more than one such file. They copy exactly the lines shown (no line numbers; CSV files copy as CSV rebuilt from the table; Markdown, shown rendered, has no button), announce the result to screen readers and fall back to the legacy copy command on sites without HTTPS. A small deferred script, served from the site, loads only on pages that show a gist with something to copy; without JavaScript nothing changes. Opt out globally (Settings > Gistful), per block (Display panel) or with `copy="no"` on the shortcode.
