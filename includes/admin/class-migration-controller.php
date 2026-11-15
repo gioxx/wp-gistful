@@ -177,10 +177,10 @@ final class Migration_Controller {
 	 */
 	private static function check_post( int $post_id ): ?\WP_Error {
 		if ( ! get_post( $post_id ) ) {
-			return new \WP_Error( 'gistful_not_found', __( 'Post not found.', 'gistful' ), array( 'status' => 404 ) );
+			return new \WP_Error( 'gistful_not_found', __( 'Post not found.', 'gistful-for-github' ), array( 'status' => 404 ) );
 		}
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
-			return new \WP_Error( 'gistful_forbidden', __( 'You cannot edit this post.', 'gistful' ), array( 'status' => 403 ) );
+			return new \WP_Error( 'gistful_forbidden', __( 'You cannot edit this post.', 'gistful-for-github' ), array( 'status' => 403 ) );
 		}
 
 		return null;

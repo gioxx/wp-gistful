@@ -10,7 +10,7 @@
  * Author URI:        https://gioxx.org
  * License:           GPL-3.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-3.0.html
- * Text Domain:       gistful
+ * Text Domain:       gistful-for-github
  *
  * Based on GistPress by Brady Vercher and Gary Jones.
  *

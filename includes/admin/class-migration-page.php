@@ -33,8 +33,8 @@ final class Migration_Page {
 	 */
 	public static function add_menu(): void {
 		add_management_page(
-			__( 'Gistful Migration', 'gistful' ),
-			__( 'Gistful Migration', 'gistful' ),
+			__( 'Gistful Migration', 'gistful-for-github' ),
+			__( 'Gistful Migration', 'gistful-for-github' ),
 			'manage_options',
 			self::SLUG,
 			array( self::class, 'render_page' )
@@ -69,36 +69,36 @@ final class Migration_Page {
 	 */
 	private static function strings(): array {
 		return array(
-			'scanning'       => __( 'Scanning...', 'gistful' ),
+			'scanning'       => __( 'Scanning...', 'gistful-for-github' ),
 			/* translators: 1: posts, 2: backups, 3: transients, 4: convertible posts, 5: yes/no */
-			'scanResult'     => __( 'Found: %1$d posts with gists, %2$d legacy backups, %3$d legacy transients, %4$d convertible block posts. Legacy stylesheet option: %5$s.', 'gistful' ),
-			'yes'            => __( 'yes', 'gistful' ),
-			'no'             => __( 'no', 'gistful' ),
+			'scanResult'     => __( 'Found: %1$d posts with gists, %2$d legacy backups, %3$d legacy transients, %4$d convertible block posts. Legacy stylesheet option: %5$s.', 'gistful-for-github' ),
+			'yes'            => __( 'yes', 'gistful-for-github' ),
+			'no'             => __( 'no', 'gistful-for-github' ),
 			/* translators: %d: number of legacy backups */
-			'importAsk'      => __( 'This will copy %d legacy backups into Gistful backups. Your posts are not modified.', 'gistful' ),
+			'importAsk'      => __( 'This will copy %d legacy backups into Gistful backups. Your posts are not modified.', 'gistful-for-github' ),
 			/* translators: 1: number of backup rows, 2: number of transients */
-			'cleanupAsk'     => __( 'This will permanently delete GistPress data: %1$d backup rows, %2$d transients and its stylesheet option. Import the backups first if you want to keep them. Deactivate GistPress before this step.', 'gistful' ),
-			'importPending'  => __( 'Import the backups first (step 2). Cleaning up now would delete GistPress last-good copies that were not imported.', 'gistful' ),
-			'cleanupAnyway'  => __( 'Clean up without importing', 'gistful' ),
-			'confirm'        => __( 'Confirm', 'gistful' ),
-			'cancel'         => __( 'Cancel', 'gistful' ),
-			'stop'           => __( 'Stop', 'gistful' ),
-			'resume'         => __( 'Resume', 'gistful' ),
-			'stopped'        => __( 'Stopped. You can resume from where it stopped.', 'gistful' ),
+			'cleanupAsk'     => __( 'This will permanently delete GistPress data: %1$d backup rows, %2$d transients and its stylesheet option. Import the backups first if you want to keep them. Deactivate GistPress before this step.', 'gistful-for-github' ),
+			'importPending'  => __( 'Import the backups first (step 2). Cleaning up now would delete GistPress last-good copies that were not imported.', 'gistful-for-github' ),
+			'cleanupAnyway'  => __( 'Clean up without importing', 'gistful-for-github' ),
+			'confirm'        => __( 'Confirm', 'gistful-for-github' ),
+			'cancel'         => __( 'Cancel', 'gistful-for-github' ),
+			'stop'           => __( 'Stop', 'gistful-for-github' ),
+			'resume'         => __( 'Resume', 'gistful-for-github' ),
+			'stopped'        => __( 'Stopped. You can resume from where it stopped.', 'gistful-for-github' ),
 			/* translators: %d: rows processed so far */
-			'progress'       => __( 'Processed %d rows...', 'gistful' ),
-			'done'           => __( 'Done.', 'gistful' ),
+			'progress'       => __( 'Processed %d rows...', 'gistful-for-github' ),
+			'done'           => __( 'Done.', 'gistful-for-github' ),
 			/* translators: %s: error message */
-			'error'          => __( 'Error: %s', 'gistful' ),
-			'nothing'        => __( 'Nothing to do.', 'gistful' ),
-			'preview'        => __( 'Preview', 'gistful' ),
-			'before'         => __( 'Before', 'gistful' ),
-			'after'          => __( 'After', 'gistful' ),
-			'convertConfirm' => __( 'Confirm conversion (a revision is saved first)', 'gistful' ),
-			'converted'      => __( 'Converted.', 'gistful' ),
-			'unchanged'      => __( 'Nothing changed.', 'gistful' ),
+			'error'          => __( 'Error: %s', 'gistful-for-github' ),
+			'nothing'        => __( 'Nothing to do.', 'gistful-for-github' ),
+			'preview'        => __( 'Preview', 'gistful-for-github' ),
+			'before'         => __( 'Before', 'gistful-for-github' ),
+			'after'          => __( 'After', 'gistful-for-github' ),
+			'convertConfirm' => __( 'Confirm conversion (a revision is saved first)', 'gistful-for-github' ),
+			'converted'      => __( 'Converted.', 'gistful-for-github' ),
+			'unchanged'      => __( 'Nothing changed.', 'gistful-for-github' ),
 			/* translators: %d: post ID */
-			'postLabel'      => __( 'Post #%d', 'gistful' ),
+			'postLabel'      => __( 'Post #%d', 'gistful-for-github' ),
 		);
 	}
 
@@ -113,23 +113,23 @@ final class Migration_Page {
 		}
 		?>
 		<div class="wrap" id="gistful-migration">
-			<h1><?php echo esc_html__( 'Gistful Migration', 'gistful' ); ?></h1>
-			<p><?php echo esc_html__( 'Move from GistPress to Gistful. Nothing is changed until you review the numbers or the preview and confirm.', 'gistful' ); ?></p>
+			<h1><?php echo esc_html__( 'Gistful Migration', 'gistful-for-github' ); ?></h1>
+			<p><?php echo esc_html__( 'Move from GistPress to Gistful. Nothing is changed until you review the numbers or the preview and confirm.', 'gistful-for-github' ); ?></p>
 
-			<h2><?php echo esc_html__( '1. Scan', 'gistful' ); ?></h2>
-			<p><button type="button" class="button" id="gistful-scan"><?php echo esc_html__( 'Scan the site', 'gistful' ); ?></button></p>
+			<h2><?php echo esc_html__( '1. Scan', 'gistful-for-github' ); ?></h2>
+			<p><button type="button" class="button" id="gistful-scan"><?php echo esc_html__( 'Scan the site', 'gistful-for-github' ); ?></button></p>
 			<p id="gistful-scan-result" aria-live="polite"></p>
 
-			<h2><?php echo esc_html__( '2. Import backups', 'gistful' ); ?></h2>
-			<p><?php echo esc_html__( 'Copies GistPress last-good copies into Gistful backups.', 'gistful' ); ?></p>
+			<h2><?php echo esc_html__( '2. Import backups', 'gistful-for-github' ); ?></h2>
+			<p><?php echo esc_html__( 'Copies GistPress last-good copies into Gistful backups.', 'gistful-for-github' ); ?></p>
 			<div id="gistful-import" class="gistful-step"></div>
 
-			<h2><?php echo esc_html__( '3. Clean up GistPress data', 'gistful' ); ?></h2>
-			<p><?php echo esc_html__( 'Requires GistPress to be deactivated.', 'gistful' ); ?></p>
+			<h2><?php echo esc_html__( '3. Clean up GistPress data', 'gistful-for-github' ); ?></h2>
+			<p><?php echo esc_html__( 'Requires GistPress to be deactivated.', 'gistful-for-github' ); ?></p>
 			<div id="gistful-cleanup" class="gistful-step"></div>
 
-			<h2><?php echo esc_html__( '4. Convert to blocks', 'gistful' ); ?></h2>
-			<p><?php echo esc_html__( 'Block-editor posts only. Gist embeds and [gist] shortcode blocks become Gistful blocks, one post at a time, after a preview.', 'gistful' ); ?></p>
+			<h2><?php echo esc_html__( '4. Convert to blocks', 'gistful-for-github' ); ?></h2>
+			<p><?php echo esc_html__( 'Block-editor posts only. Gist embeds and [gist] shortcode blocks become Gistful blocks, one post at a time, after a preview.', 'gistful-for-github' ); ?></p>
 			<div id="gistful-convert"></div>
 			<?php Footer::render(); ?>
 		</div>

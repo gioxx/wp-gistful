@@ -54,13 +54,13 @@ final class Source {
 		$outcomes[] = $outcome;
 
 		if ( in_array( 'not_found', $outcomes, true ) || in_array( 'file_missing', $outcomes, true ) ) {
-			return new \WP_Error( 'gistful_not_found', __( 'Gist not found.', 'gistful' ) );
+			return new \WP_Error( 'gistful_not_found', __( 'Gist not found.', 'gistful-for-github' ) );
 		}
 		if ( in_array( 'bad_body', $outcomes, true ) ) {
-			return new \WP_Error( 'gistful_bad_body', __( 'GitHub returned an unexpected response.', 'gistful' ) );
+			return new \WP_Error( 'gistful_bad_body', __( 'GitHub returned an unexpected response.', 'gistful-for-github' ) );
 		}
 
-		return new \WP_Error( 'gistful_http', __( 'Could not reach GitHub.', 'gistful' ) );
+		return new \WP_Error( 'gistful_http', __( 'Could not reach GitHub.', 'gistful-for-github' ) );
 	}
 
 	/**
