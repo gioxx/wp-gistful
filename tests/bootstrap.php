@@ -19,6 +19,14 @@ $_tests_dir = $gistful_root . '/vendor/wp-phpunit/wp-phpunit';
 require_once $gistful_root . '/vendor/yoast/phpunit-polyfills/phpunitpolyfills-autoload.php';
 require_once $_tests_dir . '/includes/functions.php';
 
+// The WP test bootstrap raises core/vendor deprecations on newer PHP (e.g.
+// spl_object_hash() in tests_add_filter() on PHP 8.6). In separate-process
+// tests they are printed before PHPUnit's handler exists and fail the test,
+// so mute them while bootstrapping. Plugin code is still checked by
+// Gistful_Test_Case once tests run.
+$gistful_error_level = error_reporting();
+error_reporting( $gistful_error_level & ~E_DEPRECATED & ~E_USER_DEPRECATED );
+
 tests_add_filter(
 	'muplugins_loaded',
 	static function () use ( $gistful_root ) {
@@ -27,6 +35,8 @@ tests_add_filter(
 );
 
 require $_tests_dir . '/includes/bootstrap.php';
+
+error_reporting( $gistful_error_level );
 
 require_once __DIR__ . '/class-gistful-test-case.php';
 require_once __DIR__ . '/trait-http-mock.php';
