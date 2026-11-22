@@ -4,7 +4,7 @@ Tags: gist, github, embed, code, syntax highlighting
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.2.1
+Stable tag: 0.3.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -74,6 +74,11 @@ There are three cases:
 
 == Changelog ==
 
+= 0.3.0 =
+* New: `[gistful]` shortcode. `[gist]` remains as a GistPress compatibility alias, but no longer replaces another plugin's `[gist]` handler unless the new takeover option in Settings > Gistful is on.
+* The conflict notice shows only on the Plugins and Gistful settings screens.
+* readme: documented the connection to GitHub (External services).
+
 = 0.2.1 =
 * Text domain changed to `gistful-for-github` to match the WordPress.org slug.
 
@@ -86,6 +91,9 @@ There are three cases:
 * Initial release: block, shortcode and URL embeds, local CSS, dark mode, GistPress migration tool, security hardening, WP-CLI cache command.
 
 == Upgrade Notice ==
+
+= 0.3.0 =
+New [gistful] shortcode. If another plugin such as Jetpack also handles [gist], it now keeps it unless you enable the takeover in Settings > Gistful.
 
 = 0.2.1 =
 Translations now load from translate.wordpress.org.

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 - 2026-11-22
 
 - New `[gistful]` shortcode, always available. `[gist]` stays as a GistPress compatibility alias, but Gistful no longer replaces another plugin's `[gist]` handler (GistPress, Jetpack Shortcodes) unless the new "[gist] shortcode" takeover option is turned on in Settings > Gistful. The gist URL embed handler is registered under the `gistful` ID and runs after other handlers unless the takeover is on.
 - The conflict notice shows only on the Plugins and Gistful settings screens, and says who renders `[gist]`.
