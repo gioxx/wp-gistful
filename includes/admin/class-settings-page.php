@@ -9,6 +9,7 @@ namespace Gistful\Admin;
 
 use Gistful\Cache;
 use Gistful\Conflicts;
+use Gistful\Plugin;
 use Gistful\Settings_Store;
 
 defined( 'ABSPATH' ) || exit;
@@ -96,6 +97,7 @@ final class Settings_Page {
 			'show_meta'         => ! empty( $input['show_meta'] ),
 			'copy_button'       => ! empty( $input['copy_button'] ),
 			'cache_hours'       => is_numeric( $hours ) ? max( 1, min( 168, (int) $hours ) ) : $defaults['cache_hours'],
+			'take_over_gist'    => ! empty( $input['take_over_gist'] ),
 		);
 	}
 
@@ -151,6 +153,10 @@ final class Settings_Page {
 				'value' => self::yes_no( self::has_legacy_data() ),
 			),
 			'conflicts' => Conflicts::status(),
+			'gist_tag'  => array(
+				'label' => __( '[gist] handled by Gistful', 'gistful-for-github' ),
+				'value' => self::yes_no( Plugin::owns_gist_shortcode() ),
+			),
 		);
 
 		return $rows;
@@ -240,6 +246,13 @@ final class Settings_Page {
 					<tr>
 						<th scope="row"><label for="gistful-cache-hours"><?php echo esc_html__( 'Cache duration (hours)', 'gistful-for-github' ); ?></label></th>
 						<td><input id="gistful-cache-hours" type="number" min="1" max="168" step="1" class="small-text" name="<?php echo esc_attr( $name ); ?>[cache_hours]" value="<?php echo esc_attr( (string) $s['cache_hours'] ); ?>"></td>
+					</tr>
+					<tr>
+						<th scope="row"><?php echo esc_html__( '[gist] shortcode', 'gistful-for-github' ); ?></th>
+						<td>
+							<label><?php $tick( 'take_over_gist' ); ?> <?php echo esc_html__( 'Take over [gist] shortcodes and pasted gist URLs even when another plugin (such as GistPress or Jetpack) handles them', 'gistful-for-github' ); ?></label>
+							<p class="description"><?php echo esc_html__( 'Off by default. The Gistful block and the [gistful] shortcode always work. [gist] is handled by Gistful only when no other plugin or theme registers it, or when this option is on.', 'gistful-for-github' ); ?></p>
+						</td>
 					</tr>
 				</table>
 				<?php submit_button(); ?>

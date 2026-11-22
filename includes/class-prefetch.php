@@ -99,8 +99,8 @@ final class Prefetch {
 			}
 		}
 
-		// The gist shortcode.
-		if ( preg_match_all( '/' . get_shortcode_regex( array( 'gist' ) ) . '/', $content, $m, PREG_SET_ORDER ) ) {
+		// The [gist] and [gistful] shortcodes.
+		if ( preg_match_all( '/' . get_shortcode_regex( array( 'gist', 'gistful' ) ) . '/', $content, $m, PREG_SET_ORDER ) ) {
 			foreach ( $m as $match ) {
 				if ( '[' === $match[1] && ']' === $match[6] ) {
 					continue; // Escaped by doubled brackets.

@@ -124,8 +124,28 @@ class Test_Conflicts extends Gistful_Test_Case {
 		$this->assertStringContainsString( 'gistful_notice=gistpress_deactivated', $location );
 	}
 
-	public function test_notice_only_for_capable_users_and_names_plugin() {
+	public function test_notice_not_shown_on_dashboard() {
 		set_current_screen( 'dashboard' );
+		add_shortcode( 'gist', '__return_empty_string' );
+		Conflicts::capture();
+		$this->login_admin();
+		ob_start();
+		Conflicts::render_notice();
+		$this->assertSame( '', ob_get_clean() );
+	}
+
+	public function test_notice_explains_gist_is_left_to_other_plugin() {
+		set_current_screen( 'plugins' );
+		add_shortcode( 'gist', '__return_empty_string' );
+		Conflicts::capture();
+		$this->login_admin();
+		ob_start();
+		Conflicts::render_notice();
+		$this->assertStringContainsString( 'left to it', ob_get_clean() );
+	}
+
+	public function test_notice_only_for_capable_users_and_names_plugin() {
+		set_current_screen( 'plugins' );
 		add_shortcode( 'gist', '__return_empty_string' );
 		Conflicts::capture();
 

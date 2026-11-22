@@ -48,12 +48,36 @@ final class Plugin {
 	}
 
 	/**
-	 * Register the [gist] shortcode and the gist oEmbed handler.
+	 * Register the [gistful] shortcode, the [gist] compatibility alias and the
+	 * gist URL embed handler.
+	 *
+	 * [gist] is the shortcode used by GistPress content. It is registered only
+	 * when no other plugin or theme owns it, unless the site administrator opts
+	 * in to the takeover in Settings > Gistful.
 	 *
 	 * @return void
 	 */
 	public static function register_embeds(): void {
-		add_shortcode( 'gist', array( Embed::class, 'shortcode' ) );
-		wp_embed_register_handler( 'gist', Gist_Url::PATTERN, array( Embed::class, 'oembed_handler' ) );
+		$callback  = array( Embed::class, 'shortcode' );
+		$take_over = (bool) Settings_Store::get( 'take_over_gist' );
+
+		add_shortcode( 'gistful', $callback );
+		if ( $take_over || ! shortcode_exists( 'gist' ) || self::owns_gist_shortcode() ) {
+			add_shortcode( 'gist', $callback );
+		}
+
+		// Priority 10 leaves gist URLs to handlers registered earlier; 9 only on opt-in takeover.
+		wp_embed_register_handler( 'gistful', Gist_Url::PATTERN, array( Embed::class, 'oembed_handler' ), $take_over ? 9 : 10 );
+	}
+
+	/**
+	 * Whether [gist] is currently handled by Gistful.
+	 *
+	 * @return bool
+	 */
+	public static function owns_gist_shortcode(): bool {
+		global $shortcode_tags;
+
+		return isset( $shortcode_tags['gist'] ) && array( Embed::class, 'shortcode' ) === $shortcode_tags['gist'];
 	}
 }

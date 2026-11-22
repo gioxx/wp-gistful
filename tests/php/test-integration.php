@@ -35,11 +35,40 @@ class Test_Integration extends Gistful_Test_Case {
 		$this->assertStringContainsString( 'class="gistful"', apply_filters( 'the_content', get_post( $post )->post_content ) );
 	}
 
-	public function test_shortcode_overrides_previous_owner() {
+	public function test_shortcode_respects_previous_owner_by_default() {
 		add_shortcode( 'gist', fn() => 'OLD' );
-		do_action( 'init' );
+		\Gistful\Plugin::register_embeds();
 		$this->mock_ok();
-		$this->assertStringContainsString( 'gistful', do_shortcode( '[gist id="abc123"]' ) );
+		$this->assertSame( 'OLD', do_shortcode( '[gist id="abc123"]' ) );
+		$this->assertFalse( \Gistful\Plugin::owns_gist_shortcode() );
+		$this->assertStringContainsString( 'class="gistful', do_shortcode( '[gistful id="abc123"]' ) );
+	}
+
+	public function test_shortcode_takes_over_previous_owner_when_opted_in() {
+		\Gistful\Settings_Store::update( array( 'take_over_gist' => true ) );
+		add_shortcode( 'gist', fn() => 'OLD' );
+		\Gistful\Plugin::register_embeds();
+		$this->mock_ok();
+		$this->assertStringContainsString( 'class="gistful', do_shortcode( '[gist id="abc123"]' ) );
+		$this->assertTrue( \Gistful\Plugin::owns_gist_shortcode() );
+	}
+
+	public function test_shortcode_registered_when_free() {
+		remove_shortcode( 'gist' );
+		\Gistful\Plugin::register_embeds();
+		$this->assertTrue( \Gistful\Plugin::owns_gist_shortcode() );
+		$this->assertTrue( shortcode_exists( 'gistful' ) );
+	}
+
+	public function test_embed_handler_uses_prefixed_id() {
+		global $wp_embed;
+		\Gistful\Plugin::register_embeds();
+		$this->assertArrayHasKey( 'gistful', $wp_embed->handlers[10] );
+	}
+
+	public function test_prefetch_finds_gistful_shortcode() {
+		$found = Prefetch::find_gists( '[gistful id="ddd444"]' );
+		$this->assertSame( 'ddd444', $found[0]['id'] );
 	}
 
 	public function test_shortcode_with_enclosed_url() {

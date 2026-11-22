@@ -58,7 +58,7 @@ export const fromEmbed = {
 
 export const fromShortcode = {
 	type: 'shortcode',
-	tag: 'gist',
+	tag: [ 'gist', 'gistful' ],
 	attributes: {
 		url: { type: 'string', shortcode: ( { named }, { shortcode } = {} ) => shortcodeToAttributes( named, shortcode?.content ).url },
 		file: { type: 'string', shortcode: ( { named }, { shortcode } = {} ) => shortcodeToAttributes( named, shortcode?.content ).file },

@@ -519,14 +519,14 @@ final class Migrator {
 	}
 
 	/**
-	 * Block attributes for a core/shortcode block that is exactly one [gist].
+	 * Block attributes for a core/shortcode block that is exactly one [gist] or [gistful].
 	 *
 	 * @param string $html Block inner HTML.
 	 * @return array<string, mixed>|null
 	 */
 	private static function attrs_from_shortcode( string $html ): ?array {
 		$html = trim( $html );
-		if ( ! preg_match( '/^' . get_shortcode_regex( array( 'gist' ) ) . '$/s', $html, $m ) || '[' === $m[1] || '' !== $m[5] ) {
+		if ( ! preg_match( '/^' . get_shortcode_regex( array( 'gist', 'gistful' ) ) . '$/s', $html, $m ) || '[' === $m[1] || '' !== $m[5] ) {
 			return null;
 		}
 		$raw = shortcode_parse_atts( $m[3] );

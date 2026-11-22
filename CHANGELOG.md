@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- New `[gistful]` shortcode, always available. `[gist]` stays as a GistPress compatibility alias, but Gistful no longer replaces another plugin's `[gist]` handler (GistPress, Jetpack Shortcodes) unless the new "[gist] shortcode" takeover option is turned on in Settings > Gistful. The gist URL embed handler is registered under the `gistful` ID and runs after other handlers unless the takeover is on.
+- The conflict notice shows only on the Plugins and Gistful settings screens, and says who renders `[gist]`.
+- readme: "External services" section documenting the requests to GitHub, with links to GitHub's Terms of Service and Privacy Statement.
+
 ## 0.2.1 - 2026-11-15
 
 - Text domain is now `gistful-for-github`, matching the WordPress.org slug, so translations from translate.wordpress.org load.

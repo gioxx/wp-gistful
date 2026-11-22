@@ -32,6 +32,7 @@ final class Settings_Store {
 			'show_meta'         => true,
 			'copy_button'       => true,
 			'cache_hours'       => 12,
+			'take_over_gist'    => false,
 		);
 	}
 
@@ -52,6 +53,7 @@ final class Settings_Store {
 			'show_meta'         => (bool) $merged['show_meta'],
 			'copy_button'       => (bool) $merged['copy_button'],
 			'cache_hours'       => (int) $merged['cache_hours'],
+			'take_over_gist'    => (bool) $merged['take_over_gist'],
 		);
 	}
 

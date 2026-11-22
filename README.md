@@ -6,7 +6,7 @@ Based on GistPress by Brady Vercher and Gary Jones. Licensed GPL-3.0-or-later.
 
 ## Features
 
-- Block, `[gist]` shortcode and pasted URLs; drop-in replacement for GistPress.
+- Block, `[gistful]` shortcode (plus `[gist]` as a GistPress compatibility alias) and pasted URLs; replacement for GistPress.
 - Server-side fetch and cache; local CSS and a small local script only for the copy buttons, so the plugin's own assets make no browser requests to GitHub (images inside Markdown gists are served by GitHub).
 - "Copy" button per code and CSV file and "Copy all" on multi-file gists (only the lines shown; Markdown, shown rendered, has none); opt out in the settings, per block or with `copy="no"`.
 - Dark mode (auto or forced), line numbers, ranges, highlighting, multi-file gists.
@@ -20,7 +20,7 @@ PHP 8.1+, WordPress 6.5+.
 
 ## Installation
 
-Download the latest release zip and upload it from Plugins → Add New → Upload Plugin, or build it yourself with `bin/package.sh`. If GistPress is active, Gistful takes over its `[gist]` shortcode and pasted URLs; Tools → Gistful Migration imports its backups and cleans up its data.
+Download the latest release zip and upload it from Plugins → Add New → Upload Plugin, or build it yourself with `bin/package.sh`. If GistPress is active, `[gist]` stays with it until you deactivate it (or enable the takeover option in Settings → Gistful); Tools → Gistful Migration imports its backups and cleans up its data.
 
 More plugins by the same author: [wordpress.gxware.org](https://wordpress.gxware.org/).
 

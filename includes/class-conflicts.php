@@ -16,7 +16,7 @@ final class Conflicts {
 
 	const ACTION        = 'gistful_deactivate_gistpress';
 	const GISTPRESS_ID  = 'gistpress/gistpress.php';
-	const NOTICE_SCREEN = array( 'dashboard', 'plugins', 'settings_page_gistful' );
+	const NOTICE_SCREEN = array( 'plugins', 'settings_page_gistful' );
 
 	/**
 	 * Result captured on init priority 19, before Gistful registers its own handlers.
@@ -181,15 +181,17 @@ final class Conflicts {
 		if ( ! self::on_notice_screen() ) {
 			return;
 		}
+		$owned = Plugin::owns_gist_shortcode();
 		foreach ( self::found() as $conflict ) {
 			echo '<div class="notice notice-warning is-dismissible"><p>';
-			echo esc_html(
-				sprintf(
-					/* translators: %s: name of the other plugin */
-					__( 'Gistful detected %s, which also handles gists. Gistful has taken over gist embeds on this site, so they are rendered by Gistful.', 'gistful-for-github' ),
-					$conflict['name']
-				)
-			);
+			if ( $owned ) {
+				/* translators: %s: name of the other plugin */
+				$message = __( 'Gistful detected %s, which also handles gists. The [gist] takeover option is on, so [gist] shortcodes are rendered by Gistful.', 'gistful-for-github' );
+			} else {
+				/* translators: %s: name of the other plugin */
+				$message = __( 'Gistful detected %s, which also handles gists, so [gist] shortcodes are left to it. Use the Gistful block or the [gistful] shortcode, deactivate the other plugin, or turn on the [gist] takeover in Settings > Gistful.', 'gistful-for-github' );
+			}
+			echo esc_html( sprintf( $message, $conflict['name'] ) );
 			echo '</p>';
 			if ( 'gistpress' === $conflict['slug'] && 'denied' === self::deactivation_mode( (string) $conflict['plugin_file'] ) ) {
 				echo '<p>' . esc_html__( 'GistPress is network-activated; ask a network administrator to deactivate it.', 'gistful-for-github' ) . '</p>';
