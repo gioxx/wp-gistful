@@ -99,8 +99,9 @@ final class Prefetch {
 			}
 		}
 
-		// The [gist] and [gistful] shortcodes.
-		if ( preg_match_all( '/' . get_shortcode_regex( array( 'gist', 'gistful' ) ) . '/', $content, $m, PREG_SET_ORDER ) ) {
+		// [gistful], plus [gist] only while Gistful handles it (another plugin may own it).
+		$tags = Plugin::owns_gist_shortcode() ? array( 'gist', 'gistful' ) : array( 'gistful' );
+		if ( preg_match_all( '/' . get_shortcode_regex( $tags ) . '/', $content, $m, PREG_SET_ORDER ) ) {
 			foreach ( $m as $match ) {
 				if ( '[' === $match[1] && ']' === $match[6] ) {
 					continue; // Escaped by doubled brackets.

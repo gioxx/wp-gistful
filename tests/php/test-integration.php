@@ -24,6 +24,13 @@ class Test_Integration extends Gistful_Test_Case {
 		wp_deregister_style( 'gistful' );
 	}
 
+	public function tear_down() {
+		// Coexistence tests hand [gist] to a fake owner; give it back to Gistful.
+		remove_shortcode( 'gist' );
+		add_shortcode( 'gist', array( Embed::class, 'shortcode' ) );
+		parent::tear_down();
+	}
+
 	private function mock_ok() {
 		$this->mock( 'gist.github.com', 200, $this->fixture( 'json-single.json' ) );
 	}
@@ -69,6 +76,12 @@ class Test_Integration extends Gistful_Test_Case {
 	public function test_prefetch_finds_gistful_shortcode() {
 		$found = Prefetch::find_gists( '[gistful id="ddd444"]' );
 		$this->assertSame( 'ddd444', $found[0]['id'] );
+	}
+
+	public function test_prefetch_skips_gist_owned_by_another_plugin() {
+		add_shortcode( 'gist', fn() => 'OLD' );
+		$this->assertSame( array(), Prefetch::find_gists( '[gist id="eee555"]' ) );
+		$this->assertCount( 1, Prefetch::find_gists( '[gist id="eee555"] [gistful id="fff666"]' ) );
 	}
 
 	public function test_shortcode_with_enclosed_url() {
