@@ -147,7 +147,7 @@ final class Embed {
 
 	/**
 	 * Shortcode callback. Besides the id attribute, accepts a gist URL as the
-	 * enclosed content: [gist]https://gist.github.com/user/id[/gist].
+	 * enclosed content: [gistful]https://gist.github.com/user/id[/gistful].
 	 *
 	 * @param array<string, mixed>|string $atts    Shortcode attributes.
 	 * @param string|null                 $content Enclosed content.

@@ -4,19 +4,19 @@ Tags: gist, github, embed, code, syntax highlighting
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.2.1
+Stable tag: 0.3.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-Embed GitHub Gists with a block, the [gist] shortcode or a pasted URL. A modern, drop-in replacement for GistPress.
+Embed GitHub Gists with a block, the [gistful] shortcode or a pasted URL. A modern replacement for GistPress.
 
 == Description ==
 
-Gistful for GitHub embeds GitHub Gists in your posts and pages. It is a drop-in replacement for GistPress: the same `[gist]` shortcode and pasted gist URLs keep working, so you can switch without editing your content.
+Gistful for GitHub embeds GitHub Gists in your posts and pages. It is a replacement for GistPress: existing `[gist]` shortcodes and pasted gist URLs keep working, so you can switch without editing your content.
 
 Features:
 
-* Block editor block, `[gist]` shortcode and pasted gist URLs (oEmbed-style) all supported.
+* Block editor block, `[gistful]` shortcode and pasted gist URLs (oEmbed-style) all supported. `[gist]` works too, as a compatibility alias for GistPress content (see the FAQ).
 * Local CSS, no browser requests to GitHub from the plugin's own CSS and scripts. Gists are fetched and cached by your server. The only exception is images inside Markdown gists, which are served by GitHub.
 * Dark mode: follows the visitor's system preference automatically, or force light or dark in the settings.
 * "Copy" button on every code and CSV file and "Copy all" on multi-file gists: copies exactly the lines shown, without line numbers (CSV files copy as CSV). Markdown files are shown rendered, so they have no Copy button. Can be turned off in the settings, per block, or with `copy="no"` on the shortcode.
@@ -31,7 +31,7 @@ Credits: based on GistPress by Brady Vercher and Gary Jones (https://github.com/
 
 1. Upload the `gistful` folder to `/wp-content/plugins/`, or install the plugin from the Plugins screen.
 2. Activate it through the Plugins screen.
-3. Add the Gist block, use `[gist]https://gist.github.com/user/id[/gist]`, or paste a gist URL on its own line.
+3. Add the Gist block, use `[gistful id="GIST_ID"]`, or paste a gist URL on its own line.
 4. Optional: adjust Settings > Gistful.
 
 == Frequently Asked Questions ==
@@ -39,6 +39,10 @@ Credits: based on GistPress by Brady Vercher and Gary Jones (https://github.com/
 = How do I migrate from GistPress? =
 
 Deactivate GistPress, activate Gistful, then open Tools > Gistful Migration. Existing `[gist]` shortcodes and pasted URLs already render without changes; the tool converts GistPress content to the block if you want it, and keeps a backup.
+
+= What is the difference between [gistful] and [gist]? =
+
+`[gistful]` is the plugin's own shortcode and always works. `[gist]` is the shortcode GistPress used: Gistful handles it only when no other plugin or theme registers it, so it never replaces another plugin's handler by itself. If another plugin (for example Jetpack's Shortcodes module) also handles `[gist]`, a notice tells you; you can keep that plugin in charge, use the block or `[gistful]`, or turn on the takeover option in Settings > Gistful.
 
 = How does dark mode work? =
 
@@ -70,6 +74,11 @@ There are three cases:
 
 == Changelog ==
 
+= 0.3.0 =
+* New: `[gistful]` shortcode. `[gist]` remains as a GistPress compatibility alias, but no longer replaces another plugin's `[gist]` handler unless the new takeover option in Settings > Gistful is on.
+* The conflict notice shows only on the Plugins and Gistful settings screens.
+* readme: documented the connection to GitHub (External services).
+
 = 0.2.1 =
 * Text domain changed to `gistful-for-github` to match the WordPress.org slug.
 
@@ -83,6 +92,9 @@ There are three cases:
 
 == Upgrade Notice ==
 
+= 0.3.0 =
+New [gistful] shortcode. If another plugin such as Jetpack also handles [gist], it now keeps it unless you enable the takeover in Settings > Gistful.
+
 = 0.2.1 =
 Translations now load from translate.wordpress.org.
 
@@ -91,6 +103,15 @@ Copy buttons on gists, and syntax colours no longer go missing for hours when Gi
 
 = 0.1.0 =
 Initial release.
+
+== External services ==
+
+This plugin connects to GitHub, a code hosting service provided by GitHub, Inc., to fetch the gists you embed. Without it the plugin cannot display gists.
+
+* What is sent and when: when a post containing a gist is saved, and when a visitor views a post whose cached copy of the gist has expired, your server requests the gist from `gist.github.com` (the gist's embed data) and, when that fails or to read the gist's file names, from `api.github.com`. The request contains the gist ID, the selected file name if any, and a User-Agent with the plugin version and your site URL. If you define `GISTFUL_GITHUB_TOKEN`, that token is sent to `api.github.com` to authenticate. No data about your visitors is sent.
+* Images inside Markdown gists are loaded by the visitor's browser directly from GitHub's servers (for example `githubusercontent.com`), so GitHub receives the visitor's IP address and browser details for those images.
+* GitHub Terms of Service: https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+* GitHub Privacy Statement: https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement
 
 == Privacy ==
 

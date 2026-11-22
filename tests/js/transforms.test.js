@@ -34,3 +34,7 @@ test( 'maps the copy attribute', () => {
 	expect( shortcodeToAttributes( { id: 'abc123', copy: 'no' } ).copy ).toBe( false );
 	expect( shortcodeToAttributes( { id: 'abc123' } ).copy ).toBeUndefined();
 } );
+
+test( 'shortcode transform accepts [gist] and [gistful]', () => {
+	expect( fromShortcode.tag ).toEqual( [ 'gist', 'gistful' ] );
+} );
